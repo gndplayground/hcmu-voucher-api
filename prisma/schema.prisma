@@ -23,6 +23,9 @@ model User {
   role        Role
   userProfile UserProfile?
   createdAt   DateTime     @default(now())
+  seed     String?
+  isLocked Boolean @default(false)
+  isDisabled Boolean @default(false)
 }
 
 model UserProfile {

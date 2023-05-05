@@ -1,18 +1,31 @@
 import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { PrismaClientExceptionFilter } from './prisma/prisma-client-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(cookieParser());
+  app.enableCors({
+    credentials: true,
+    origin: true,
+  });
+
   const config = app.get(ConfigService);
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
     }),
   );
+
+  // Prisma filter
+  const { httpAdapter } = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
+
   // Swagger
   const configSwagger = new DocumentBuilder()
     .setTitle('Voucher API')

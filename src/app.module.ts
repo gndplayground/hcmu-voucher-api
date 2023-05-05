@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
 import config from './common/config';
 
 @Module({
@@ -29,6 +30,7 @@ import config from './common/config';
         module: DashboardModule,
       },
     ]),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -27,7 +27,7 @@ export class UserProfileDto implements UserProfile {
   createdAt: Date;
 }
 
-export class UserDto implements Omit<User, 'password'> {
+export class UserDto implements User {
   @ApiProperty()
   id: number;
 
@@ -37,12 +37,25 @@ export class UserDto implements Omit<User, 'password'> {
   @ApiProperty()
   role: Role;
 
-  @ApiProperty()
-  createdAt: Date;
-
   @ApiProperty({
     required: false,
     nullable: true,
   })
+  createdAt: Date;
+
   userProfile?: UserProfileDto;
+
+  password: string;
+
+  seed: string;
+
+  @ApiProperty({
+    required: false,
+  })
+  isDisabled: boolean;
+
+  @ApiProperty({
+    required: false,
+  })
+  isLocked: boolean;
 }
