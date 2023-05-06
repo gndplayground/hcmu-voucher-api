@@ -18,4 +18,7 @@ export class PaginationDto {
   @IsIn([10, 20, 50, 100])
   @IsOptional()
   limit?: number;
+
+  @IsOptional()
+  search?: string;
 }

@@ -21,7 +21,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { LoginDto, UserPayloadDto } from './auth.dto';
 import { RefreshGuard } from './refresh.guard';
-import { User } from './auth.decorator';
+import { UserDeco } from './auth.decorator';
 import { AuthGuard } from './auth.guard';
 import { AppConfig } from '@/common/config';
 import { AppRequest, AppResponse } from '@/common/types/app';
@@ -55,13 +55,9 @@ export class AuthController {
 
     const { token, user } = result;
 
-    const expire = this.configService.get('jwt').expiresIn
-      ? Number.parseInt(this.configService.get('jwt').expiresIn)
-      : 60 * 10;
-
     res.cookie('token', token, {
-      // httpOnly: true,
-      expires: new Date(Date.now() + 1000 * expire),
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
     });
 
     return {
@@ -119,7 +115,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @Post('refresh-token')
   async refreshToken(
-    @User() userPayload: UserPayloadDto,
+    @UserDeco() userPayload: UserPayloadDto,
     @Request() req: AppRequest,
     @Response({
       passthrough: true,
@@ -135,13 +131,10 @@ export class AuthController {
     const { token, user } = result;
 
     if (req.cookies && 'token' in req.cookies) {
-      const expire = this.configService.get('jwt').expiresIn
-        ? Number.parseInt(this.configService.get('jwt').expiresIn)
-        : 60 * 10;
-
       res.cookie('token', token, {
         httpOnly: true,
-        expires: new Date(Date.now() + 1000 * expire),
+        // 30 days
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
       });
     }
 

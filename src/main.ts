@@ -6,6 +6,7 @@ import * as cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { PrismaClientExceptionFilter } from './prisma/prisma-client-exception.filter';
+import { InternalExceptionFilter } from './common/internal-exception-filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,10 +25,13 @@ async function bootstrap() {
 
   // Prisma filter
   const { httpAdapter } = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new InternalExceptionFilter());
   app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
 
   // Swagger
   const configSwagger = new DocumentBuilder()
+    .addCookieAuth('token')
+    .addBearerAuth()
     .setTitle('Voucher API')
     .setDescription('Voucher API for dashboard and client')
     .setVersion('0.1')

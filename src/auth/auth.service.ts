@@ -42,7 +42,10 @@ export class AuthService {
   }
 
   async refresh(payload: UserPayloadDto) {
-    const user = await this.userService.findOne({ id: payload.id });
+    const user = await this.userService.findOne({
+      id: payload.id,
+      hideSensitive: false,
+    });
 
     if (!user) {
       return false;
