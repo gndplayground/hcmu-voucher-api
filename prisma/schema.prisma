@@ -16,24 +16,116 @@ enum Role {
   COMPANY
 }
 
+enum VoucherDiscountType {
+  PERCENTAGE
+  AMOUNT
+}
+
+enum VoucherClaimType {
+  FASTEST
+  QUESTIONS
+  // RANDOM
+  // GAME
+}
+
+enum VoucherCodeType {
+  MANUAL
+  CLAIM
+}
+
 model User {
-  id          Int          @id @default(autoincrement())
-  email       String       @unique
-  password    String
-  role        Role
-  userProfile UserProfile?
-  createdAt   DateTime     @default(now())
-  seed     String?
-  isLocked Boolean @default(false)
-  isDisabled Boolean @default(false)
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  password       String
+  role           Role
+  createdAt      DateTime        @default(now())
+  seed           String?
+  isLocked       Boolean         @default(false)
+  isDisabled     Boolean         @default(false)
+  profile        UserProfile?
+  campagins      Campagin[]
+  voucherTickets VoucherTicket[]
+}
+
+model Company {
+  id           Int           @id @default(autoincrement())
+  name         String
+  phone        String?
+  address      String?
+  logo         String?
+  createdAt    DateTime      @default(now())
+  userProfiles UserProfile[]
+  campagins    Campagin[]
+  Store        Store[]
 }
 
 model UserProfile {
   id        Int      @id @default(autoincrement())
   name      String
   phone     String?
-  company   String?
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
   userId    Int      @unique
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model Campagin {
+  id               Int               @id @default(autoincrement())
+  name             String
+  description      String?
+  logo             String?
+  claimType        VoucherClaimType?
+  claimMode        Int?
+  startDate        DateTime
+  endDate          DateTime
+  createdAt        DateTime          @default(now())
+  createdBy        Int
+  createdByUser    User              @relation(fields: [createdBy], references: [id])
+  companyId        Int?
+  company          Company?          @relation(fields: [companyId], references: [id])
+  voucherDiscounts VoucherDiscount[]
+}
+
+model VoucherDiscount {
+  id            Int                 @id @default(autoincrement())
+  campaginId    Int
+  campagin      Campagin            @relation(fields: [campaginId], references: [id])
+  description   String?
+  type          VoucherDiscountType
+  claimType     VoucherClaimType?
+  claimMode     Int?
+  code          String?
+  codeType      VoucherCodeType
+  discount      Int
+  total         Int
+  createdAt     DateTime            @default(now())
+  VoucherTicket VoucherTicket[]
+
+  @@unique([code, campaginId])
+}
+
+model VoucherTicket {
+  id              Int             @id @default(autoincrement())
+  discountId      Int
+  voucherDiscount VoucherDiscount @relation(fields: [discountId], references: [id])
+  code            String?
+  isUsed          Boolean         @default(false)
+  claimBy         Int
+  claimAt         DateTime?
+  claimByUser     User            @relation(fields: [claimBy], references: [id])
+}
+
+model Store {
+  id        Int      @id @default(autoincrement())
+  name      String
+  latitude  Float?
+  longitude Float?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  openAt    String?
+  closeAt   String?
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
 }

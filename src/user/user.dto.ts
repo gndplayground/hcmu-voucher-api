@@ -19,7 +19,7 @@ export class UserProfileDto implements UserProfile {
   @ApiProperty({
     required: false,
   })
-  company: string | null;
+  companyId: number | null;
 
   @ApiProperty()
   userId: number;
