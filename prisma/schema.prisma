@@ -54,6 +54,8 @@ model Company {
   address      String?
   logo         String?
   createdAt    DateTime      @default(now())
+  isDisabled   Boolean?      @default(false)
+  isDeleted    Boolean?      @default(false)
   userProfiles UserProfile[]
   campagins    Campagin[]
   Store        Store[]
@@ -77,6 +79,7 @@ model Campagin {
   logo             String?
   claimType        VoucherClaimType?
   claimMode        Int?
+  isDeleted        Boolean?          @default(false)
   startDate        DateTime
   endDate          DateTime
   createdAt        DateTime          @default(now())
@@ -127,5 +130,6 @@ model Store {
   openAt    String?
   closeAt   String?
   companyId Int?
+  isDeleted Boolean? @default(false)
   company   Company? @relation(fields: [companyId], references: [id])
 }

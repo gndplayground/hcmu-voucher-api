@@ -25,7 +25,7 @@ async function bootstrap() {
 
   // Prisma filter
   const { httpAdapter } = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new InternalExceptionFilter());
+  app.useGlobalFilters(new InternalExceptionFilter(httpAdapter));
   app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
 
   // Swagger
