@@ -10,6 +10,12 @@ export default () =>
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       s3BucketName: process.env.AWS_S3_BUCKET_NAME,
     },
+    sendgrid: {
+      apiKey: process.env.SENDGRID_API_KEY,
+    },
+    email: {
+      from: process.env.EMAIL_FROM,
+    },
   } as AppConfig);
 
 export interface AppConfig {
@@ -22,5 +28,11 @@ export interface AppConfig {
     accessKeyID: string;
     secretAccessKey: string;
     s3BucketName?: string;
+  };
+  sendgrid: {
+    apiKey: string;
+  };
+  email: {
+    from: string;
   };
 }

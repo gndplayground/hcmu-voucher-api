@@ -11,6 +11,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { CompaniesModule } from './companies/companies.module';
 import { UploadModule } from './upload/upload.module';
+import { EmailModule } from './email/email.module';
 import config from './common/config';
 
 @Module({
@@ -35,6 +36,7 @@ import config from './common/config';
     AuthModule,
     CompaniesModule,
     UploadModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

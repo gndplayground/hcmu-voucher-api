@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { UserController } from './user/user.controller';
 import { CompaniesController } from './companies/companies.controller';
 import { PrismaModule } from '@/prisma/prisma.module';
-import { PrismaService } from '@/prisma/prisma.service';
 import { UserModule } from '@/user/user.module';
 import { AuthModule } from '@/auth/auth.module';
 import { JwtStrategy } from '@/auth/jwt.strategy';
@@ -20,6 +19,6 @@ import { UploadModule } from '@/upload/upload.module';
     UploadModule,
   ],
   controllers: [UserController, CompaniesController],
-  providers: [PrismaService, JwtStrategy],
+  providers: [JwtStrategy],
 })
 export class AdminModule {}
