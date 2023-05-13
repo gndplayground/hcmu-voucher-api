@@ -12,6 +12,8 @@ import { AuthModule } from './auth/auth.module';
 import { CompaniesModule } from './companies/companies.module';
 import { UploadModule } from './upload/upload.module';
 import { EmailModule } from './email/email.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
+import { VouchersModule } from './vouchers/vouchers.module';
 import config from './common/config';
 
 @Module({
@@ -37,6 +39,8 @@ import config from './common/config';
     CompaniesModule,
     UploadModule,
     EmailModule,
+    CampaignsModule,
+    VouchersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

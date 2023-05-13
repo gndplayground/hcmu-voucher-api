@@ -11,3 +11,12 @@ export function TransformBoolean() {
     return Boolean(value);
   });
 }
+
+export function TransformNumber() {
+  return Transform(({ value }) => {
+    if (value === '') {
+      return null;
+    }
+    return Number(value);
+  });
+}

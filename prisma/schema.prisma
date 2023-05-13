@@ -43,7 +43,7 @@ model User {
   isLocked       Boolean         @default(false)
   isDisabled     Boolean         @default(false)
   profile        UserProfile?
-  campagins      Campagin[]
+  campaigns      Campaign[]
   voucherTickets VoucherTicket[]
 }
 
@@ -57,13 +57,13 @@ model Company {
   isDisabled   Boolean?      @default(false)
   isDeleted    Boolean?      @default(false)
   userProfiles UserProfile[]
-  campagins    Campagin[]
+  campaigns    Campaign[]
   Store        Store[]
 }
 
 model UserProfile {
   id        Int      @id @default(autoincrement())
-  name      String
+  name      String?
   phone     String?
   companyId Int?
   company   Company? @relation(fields: [companyId], references: [id])
@@ -72,7 +72,7 @@ model UserProfile {
   createdAt DateTime @default(now())
 }
 
-model Campagin {
+model Campaign {
   id               Int               @id @default(autoincrement())
   name             String
   description      String?
@@ -92,8 +92,8 @@ model Campagin {
 
 model VoucherDiscount {
   id            Int                 @id @default(autoincrement())
-  campaginId    Int
-  campagin      Campagin            @relation(fields: [campaginId], references: [id])
+  campaignId    Int
+  campaign      Campaign            @relation(fields: [campaignId], references: [id])
   description   String?
   type          VoucherDiscountType
   claimType     VoucherClaimType?
@@ -104,8 +104,6 @@ model VoucherDiscount {
   total         Int
   createdAt     DateTime            @default(now())
   VoucherTicket VoucherTicket[]
-
-  @@unique([code, campaginId])
 }
 
 model VoucherTicket {

@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Company } from '@prisma/client';
-import { Transform } from 'class-transformer';
 import { IsNotEmpty, MaxLength, IsBoolean, IsOptional } from 'class-validator';
 import { TransformBoolean } from '@/common/transforms';
 

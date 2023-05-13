@@ -25,8 +25,8 @@ async function bootstrap() {
 
   // Prisma filter
   const { httpAdapter } = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new InternalExceptionFilter(httpAdapter));
   app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
+  app.useGlobalFilters(new InternalExceptionFilter(httpAdapter));
 
   // Swagger
   const configSwagger = new DocumentBuilder()

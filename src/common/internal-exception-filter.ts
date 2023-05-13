@@ -24,7 +24,7 @@ export class InternalExceptionFilter extends BaseExceptionFilter {
     }
 
     const message = 'Internal error. Please try again later.';
-
+    console.error(exception);
     response.status(status).json({
       statusCode: status,
       message: message,

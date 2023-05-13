@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  MaxLength,
+} from 'class-validator';
 import { Role as PRole, User, UserProfile } from '@prisma/client';
+import { Exclude } from 'class-transformer';
 
 export type Role = PRole;
 
@@ -28,6 +35,49 @@ export class UserProfileDto implements UserProfile {
   createdAt: Date;
 }
 
+export class UserProfileCreateDto implements Partial<UserProfile> {
+  @IsOptional()
+  @MaxLength(128)
+  @ApiProperty()
+  name?: string;
+
+  @IsOptional()
+  @ApiProperty({
+    required: false,
+  })
+  phone?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  @ApiProperty({
+    required: false,
+  })
+  companyId?: number;
+}
+
+export class UserProfileUpdateDto implements Partial<UserProfile> {
+  @IsOptional()
+  @MaxLength(128)
+  @ApiProperty({
+    required: false,
+  })
+  name?: string;
+
+  @IsOptional()
+  @MaxLength(16)
+  @ApiProperty({
+    required: false,
+  })
+  phone?: string | null;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    required: false,
+  })
+  companyId: number | null;
+}
+
 export class UserDto implements User {
   @ApiProperty()
   id: number;
@@ -46,6 +96,7 @@ export class UserDto implements User {
 
   userProfile?: UserProfileDto;
 
+  @Exclude()
   password: string;
 
   seed: string;
@@ -95,6 +146,11 @@ export class UserEditDto {
     required: false,
   })
   isBlocked?: boolean;
+
+  @ApiProperty({
+    required: false,
+  })
+  profile?: UserProfileUpdateDto;
 }
 
 export class UserHideSensitiveDto implements Omit<User, 'password' | 'seed'> {
