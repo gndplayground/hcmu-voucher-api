@@ -139,12 +139,12 @@ export class VoucherQuestionUpdateDto implements Partial<VoucherQuestionDto> {
     required: false,
   })
   @MaxLength(255)
-  question: string;
+  question?: string;
 
   @ApiProperty({
     required: false,
   })
-  type: VoucherQuestionTypeEnum;
+  type?: VoucherQuestionTypeEnum;
 
   @ApiProperty({
     required: false,

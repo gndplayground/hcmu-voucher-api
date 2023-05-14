@@ -85,8 +85,8 @@ model Campaign {
   createdAt        DateTime          @default(now())
   createdBy        Int
   createdByUser    User              @relation(fields: [createdBy], references: [id])
-  companyId        Int?
-  company          Company?          @relation(fields: [companyId], references: [id])
+  companyId        Int
+  company          Company           @relation(fields: [companyId], references: [id])
   voucherDiscounts VoucherDiscount[]
   voucherQuestions VoucherQuestion[]
 }
@@ -129,9 +129,9 @@ model Store {
   createdAt DateTime @default(now())
   openAt    String?
   closeAt   String?
-  companyId Int?
+  companyId Int
   isDeleted Boolean? @default(false)
-  company   Company? @relation(fields: [companyId], references: [id])
+  company   Company  @relation(fields: [companyId], references: [id])
 }
 
 enum VoucherQuestionType {

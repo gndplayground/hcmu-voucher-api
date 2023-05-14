@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   FileTypeValidator,
+  ForbiddenException,
   Get,
   HttpStatus,
   MaxFileSizeValidator,
@@ -312,17 +313,32 @@ export class CampaignsController {
     },
   })
   async updateDiscount(
+    @UserDeco() userPayload: UserPayloadDto,
     @Body()
     data: VoucherDiscountUpdateDto,
     @Param('id') campId: string,
     @Param('discountId') discountId: string,
   ) {
+    const profile = await this.userService.findOneProfile({
+      userId: userPayload.id,
+    });
+
+    if (!profile || !profile.companyId) {
+      throw new ForbiddenException('Profile not found');
+    }
+
     const find = await this.campaignsService.findOne({
       id: Number(campId),
     });
 
     if (!find) {
       throw new NotFoundException('Campaign not found');
+    }
+
+    if (profile.companyId !== find.companyId) {
+      throw new ForbiddenException(
+        'You are not allowed to update this discount',
+      );
     }
 
     const discount = await this.voucherService.findOneDiscount({
@@ -369,6 +385,7 @@ export class CampaignsController {
   })
   @UseInterceptors(FileInterceptor('logo'))
   async update(
+    @UserDeco() userPayload: UserPayloadDto,
     @Body()
     data: CampaignUpdateDto,
     @Param('id') campId: string,
@@ -388,12 +405,26 @@ export class CampaignsController {
     let uploadedFileName = '';
     let deletedFileName = '';
     try {
+      const profile = await this.userService.findOneProfile({
+        userId: userPayload.id,
+      });
+
+      if (!profile || !profile.companyId) {
+        throw new ForbiddenException('Profile not found');
+      }
+
       const find = await this.campaignsService.findOne({
         id: Number(campId),
       });
 
       if (!find) {
         throw new NotFoundException('Campaign not found');
+      }
+
+      if (profile.companyId !== find.companyId) {
+        throw new ForbiddenException(
+          'You are not allowed to update this campaign',
+        );
       }
 
       if (file && !data.shouldDeletePhoto) {
@@ -485,8 +516,8 @@ export class CampaignsController {
       userId: userPayload.id,
     });
 
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
+    if (!profile || !profile.companyId) {
+      throw new ForbiddenException('Profile not found');
     }
 
     const { voucherDiscounts, questions, ...campaign } = body;

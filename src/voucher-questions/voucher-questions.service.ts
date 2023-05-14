@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import {
   VoucherQuestionChoiceUpdateDto,
   VoucherQuestionUpdateDto,
@@ -33,13 +33,51 @@ export class VoucherQuestionsService {
   }
 
   async update(
-    options: { id?: number; data: VoucherQuestionUpdateDto },
+    options: {
+      id?: number;
+      data: VoucherQuestionUpdateDto;
+      userCompanyId: number;
+    },
     as?: AsyncLocalStorage<any>,
   ) {
     const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
       this.prismaService,
       as,
     );
+
+    const currentQuestion = await this.findOne({
+      id: options.id,
+    });
+
+    if (currentQuestion.campaignId) {
+      const campaign = await p.campaign.findUnique({
+        where: {
+          id: currentQuestion.campaignId,
+        },
+      });
+
+      if (campaign.companyId !== options.userCompanyId) {
+        throw new ForbiddenException(
+          'You are not allowed to edit this question',
+        );
+      }
+    } else if (currentQuestion.discountId) {
+      const discount = await p.voucherDiscount.findUnique({
+        where: {
+          id: currentQuestion.discountId,
+        },
+        include: {
+          campaign: true,
+        },
+      });
+
+      if (discount.campaign.companyId !== options.userCompanyId) {
+        throw new ForbiddenException(
+          'You are not allowed to edit this question',
+        );
+      }
+    }
+
     return await p.voucherQuestion.update({
       where: {
         id: options.id,

@@ -1,13 +1,20 @@
 import {
   BadRequestException,
+  Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpStatus,
   NotFoundException,
   Param,
+  Patch,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiCookieAuth,
   ApiExtraModels,
   ApiOperation,
   ApiParam,
@@ -19,12 +26,18 @@ import {
 import { VoucherQuestionsService } from './voucher-questions.service';
 import {
   VoucherQuestionDto,
+  VoucherQuestionUpdateDto,
   VoucherQuestionsListQueryDto,
 } from './voucher-questions.dto';
+import { Role, Roles } from '@/auth/roles.decorator';
+import { UserDeco } from '@/auth/auth.decorator';
+import { UserPayloadDto } from '@/auth/auth.dto';
+import { AuthGuard } from '@/auth/auth.guard';
 
 @Controller('voucher-questions')
 @ApiTags('voucher-questions')
 export class VoucherQuestionsController {
+  userService: any;
   constructor(
     private readonly voucherQuestionsService: VoucherQuestionsService,
   ) {}
@@ -99,6 +112,61 @@ export class VoucherQuestionsController {
 
     return {
       data: question,
+    };
+  }
+
+  @Roles(Role.COMPANY)
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'update voucher question' })
+  @ApiExtraModels(VoucherQuestionUpdateDto, VoucherQuestionDto)
+  @ApiResponse({
+    status: 200,
+    description: 'Success',
+    schema: {
+      properties: {
+        data: {
+          $ref: getSchemaPath(VoucherQuestionDto),
+        },
+      },
+    },
+  })
+  @ApiBody({
+    type: VoucherQuestionUpdateDto,
+  })
+  @ApiParam({ name: 'id', type: 'number', description: 'Store ID' })
+  @Patch(':id')
+  async update(
+    @UserDeco() userPayload: UserPayloadDto,
+    @Param('id') questionId: string,
+    @Body()
+    data: VoucherQuestionUpdateDto,
+  ) {
+    const profile = await this.userService.findOneProfile({
+      userId: userPayload.id,
+    });
+
+    if (!profile || !profile.companyId) {
+      throw new ForbiddenException('Profile not found');
+    }
+
+    const currentQuestion = await this.voucherQuestionsService.findOne({
+      id: Number(questionId),
+    });
+
+    if (!currentQuestion) {
+      throw new NotFoundException('Question not found');
+    }
+
+    const store = await this.voucherQuestionsService.update({
+      id: Number(questionId),
+      data,
+      userCompanyId: profile.companyId,
+    });
+
+    return {
+      data: store,
     };
   }
 }
