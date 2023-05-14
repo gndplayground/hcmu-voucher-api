@@ -29,6 +29,9 @@ export class VouchersService {
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        voucherQuestions: true,
+      },
     });
   }
 
@@ -78,10 +81,30 @@ export class VouchersService {
       this.prisma,
       as,
     );
+
+    const { questions, ...others } = options.data;
+
+    const questionsCreate = questions
+      ? questions.map((q) => {
+          const { choices, ...other } = q;
+          return {
+            ...other,
+            voucherQuestionChoices: {
+              create: choices,
+            },
+          };
+        })
+      : undefined;
+
     return await p.voucherDiscount.create({
       data: {
         codeType: VoucherCodeTypeEnum.CLAIM,
-        ...options.data,
+        ...others,
+        voucherQuestions: questions
+          ? {
+              create: questionsCreate,
+            }
+          : undefined,
       },
     });
   }

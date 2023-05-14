@@ -88,22 +88,24 @@ model Campaign {
   companyId        Int?
   company          Company?          @relation(fields: [companyId], references: [id])
   voucherDiscounts VoucherDiscount[]
+  voucherQuestions VoucherQuestion[]
 }
 
 model VoucherDiscount {
-  id            Int                 @id @default(autoincrement())
-  campaignId    Int
-  campaign      Campaign            @relation(fields: [campaignId], references: [id])
-  description   String?
-  type          VoucherDiscountType
-  claimType     VoucherClaimType?
-  claimMode     Int?
-  code          String?
-  codeType      VoucherCodeType
-  discount      Int
-  total         Int
-  createdAt     DateTime            @default(now())
-  voucherTickets VoucherTicket[]
+  id               Int                 @id @default(autoincrement())
+  campaignId       Int
+  campaign         Campaign            @relation(fields: [campaignId], references: [id])
+  description      String?
+  type             VoucherDiscountType
+  claimType        VoucherClaimType?
+  claimMode        Int?
+  code             String?
+  codeType         VoucherCodeType
+  discount         Int
+  total            Int
+  createdAt        DateTime            @default(now())
+  voucherTickets   VoucherTicket[]
+  voucherQuestions VoucherQuestion[]
 }
 
 model VoucherTicket {
@@ -130,4 +132,33 @@ model Store {
   companyId Int?
   isDeleted Boolean? @default(false)
   company   Company? @relation(fields: [companyId], references: [id])
+}
+
+enum VoucherQuestionType {
+  FREE
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+}
+
+model VoucherQuestion {
+  id                     Int                     @id @default(autoincrement())
+  question               String
+  type                   VoucherQuestionType
+  createdAt              DateTime                @default(now())
+  campaignId             Int?
+  campaign               Campaign?               @relation(fields: [campaignId], references: [id])
+  discountId             Int?
+  discount               VoucherDiscount?        @relation(fields: [discountId], references: [id])
+  isDeleted              Boolean?                @default(false)
+  voucherQuestionChoices VoucherQuestionChoice[]
+}
+
+model VoucherQuestionChoice {
+  id         Int             @id @default(autoincrement())
+  questionId Int
+  question   VoucherQuestion @relation(fields: [questionId], references: [id])
+  choice     String
+  isCorrect  Boolean?
+  isDeleted  Boolean?
+  createdAt  DateTime        @default(now())
 }

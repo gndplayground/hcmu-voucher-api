@@ -52,6 +52,10 @@ import {
 } from '@/vouchers/vouchers.dto';
 import { UserService } from '@/user/user.service';
 import { VouchersService } from '@/vouchers/vouchers.service';
+import {
+  VoucherQuestionChoiceCreateDto,
+  VoucherQuestionCreateDto,
+} from '@/voucher-questions/voucher-questions.dto';
 
 @Controller('campagins')
 @ApiTags('campagins')
@@ -190,7 +194,10 @@ export class CampaignsController {
   })
   @ApiParam({ name: 'id', type: 'number', description: 'Campaign ID' })
   @ApiParam({ name: 'discountId', type: 'number', description: 'Discount ID' })
-  async discountDetail(@Param('id') campId: string) {
+  async discountDetail(
+    @Param('id') campId: string,
+    @Param('discountId') discountId: string,
+  ) {
     const find = await this.campaignsService.findOne({
       id: Number(campId),
     });
@@ -199,12 +206,16 @@ export class CampaignsController {
       throw new NotFoundException('Campaign not found');
     }
 
-    const discounts = await this.voucherService.listDiscount({
-      campaignId: Number(campId),
+    const discount = await this.voucherService.findOneDiscount({
+      id: Number(discountId),
     });
 
+    if (!find && discount.campaignId !== find.id) {
+      throw new NotFoundException('Discount not found');
+    }
+
     return {
-      data: discounts,
+      data: discount,
     };
   }
 
@@ -451,6 +462,8 @@ export class CampaignsController {
     CampaignDto,
     CampaignCreateFullDto,
     VoucherDiscountCreateWithCampaignDto,
+    VoucherQuestionCreateDto,
+    VoucherQuestionChoiceCreateDto,
   )
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -476,7 +489,7 @@ export class CampaignsController {
       throw new NotFoundException('Profile not found');
     }
 
-    const { voucherDiscounts, ...campaign } = body;
+    const { voucherDiscounts, questions, ...campaign } = body;
 
     const c = await this.campaignsService.createFull({
       campaign: {
@@ -485,6 +498,7 @@ export class CampaignsController {
       companyId: profile.companyId,
       createdBy: userPayload.id,
       discounts: voucherDiscounts,
+      questions: questions,
     });
 
     return {

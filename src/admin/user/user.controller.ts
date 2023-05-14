@@ -41,6 +41,7 @@ export class UserController {
     private authService: AuthService,
   ) {}
 
+  @Get()
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard)
   @ApiCookieAuth()
@@ -72,7 +73,6 @@ export class UserController {
       },
     },
   })
-  @Get()
   async getAll(@Query() queryParams: PaginationDto) {
     const { limit, page, search } = queryParams;
 

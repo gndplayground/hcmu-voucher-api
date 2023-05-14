@@ -12,8 +12,13 @@ import {
   IsNumber,
   IsOptional,
   MaxLength,
+  Validate,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TransformNumber } from '@/common/transforms';
+import { VoucherQuestionCreateDto } from '@/voucher-questions/voucher-questions.dto';
+import { RequiredIfValueValidator } from '@/common/validators';
 
 export type VoucherDiscountType = (typeof baseType)[keyof typeof baseType];
 export type VoucherClaimType =
@@ -117,6 +122,18 @@ export class VoucherDiscountDto implements VoucherDiscount {
     type: [VoucherTicketDto],
   })
   voucherTickets?: VoucherTicketDto[];
+
+  @ApiProperty({
+    required: false,
+    type: [VoucherQuestionCreateDto],
+  })
+  @ValidateNested()
+  @Validate(RequiredIfValueValidator, [
+    'claimType',
+    VoucherClaimTypeEnum.QUESTIONS,
+  ])
+  @Type(() => VoucherQuestionCreateDto)
+  questions?: VoucherQuestionCreateDto[];
 }
 
 export class VoucherDiscountCreateWithCampaignDto
@@ -176,6 +193,18 @@ export class VoucherDiscountCreateWithCampaignDto
   @IsNotEmpty()
   @IsNumber()
   total: number;
+
+  @ApiProperty({
+    required: false,
+    type: [VoucherQuestionCreateDto],
+  })
+  @Validate(RequiredIfValueValidator, [
+    'claimType',
+    VoucherClaimTypeEnum.QUESTIONS,
+  ])
+  @ValidateNested()
+  @Type(() => VoucherQuestionCreateDto)
+  questions?: VoucherQuestionCreateDto[];
 }
 
 export class VoucherDiscountCreateDto extends VoucherDiscountCreateWithCampaignDto {

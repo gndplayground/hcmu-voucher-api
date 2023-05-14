@@ -10,6 +10,7 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { VoucherDiscountCreateWithCampaignDto } from '@/vouchers/vouchers.dto';
 import { VouchersService } from '@/vouchers/vouchers.service';
+import { VoucherQuestionCreateDto } from '@/voucher-questions/voucher-questions.dto';
 
 @Injectable()
 export class CampaignsService {
@@ -83,6 +84,7 @@ export class CampaignsService {
       },
       include: {
         voucherDiscounts: true,
+        voucherQuestions: true,
       },
     });
   }
@@ -110,6 +112,7 @@ export class CampaignsService {
       createdBy: number;
       companyId: number;
       discounts: VoucherDiscountCreateWithCampaignDto[];
+      questions?: VoucherQuestionCreateDto[];
     },
     as?: AsyncLocalStorage<any>,
   ) {
@@ -124,6 +127,7 @@ export class CampaignsService {
           campaign: data.campaign,
           companyId: data.companyId,
           createdBy: data.createdBy,
+          questions: data.questions,
         },
         ctx,
       );
@@ -149,6 +153,7 @@ export class CampaignsService {
       campaign: CampaignCreateDto;
       createdBy: number;
       companyId: number;
+      questions?: VoucherQuestionCreateDto[];
     },
     as?: AsyncLocalStorage<any>,
   ): Promise<CampaignDto> {
@@ -156,11 +161,25 @@ export class CampaignsService {
       this.prisma,
       as,
     );
+    const questions = data.questions
+      ? data.questions.map((q) => {
+          const { choices, ...other } = q;
+          return {
+            ...other,
+            voucherQuestionChoices: {
+              create: choices,
+            },
+          };
+        })
+      : undefined;
     return p.campaign.create({
       data: {
         ...data.campaign,
         companyId: data.companyId,
         createdBy: data.createdBy,
+        voucherQuestions: {
+          create: questions,
+        },
       } as Prisma.CampaignUncheckedCreateInput,
     });
   }

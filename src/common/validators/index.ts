@@ -47,3 +47,25 @@ export class RequiredIfValidator implements ValidatorConstraintInterface {
     return `${args.property} is required when ${relatedPropertyName} is present`;
   }
 }
+
+@ValidatorConstraint({ name: 'requiredIfValue', async: false })
+@Injectable()
+export class RequiredIfValueValidator implements ValidatorConstraintInterface {
+  validate(value: any, args: ValidationArguments) {
+    const [relatedPropertyName, relatedPropertyValueWant] = args.constraints;
+    const relatedValue = (args.object as any)[relatedPropertyName];
+    console.log(value, args);
+    // related value is not equal to the value we want
+    if (relatedValue !== relatedPropertyValueWant) {
+      return true;
+    }
+
+    // either related value is not present or value is defined
+    return !relatedValue || value !== undefined;
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    const [relatedPropertyName] = args.constraints;
+    return `${args.property} is required when ${relatedPropertyName} is present`;
+  }
+}

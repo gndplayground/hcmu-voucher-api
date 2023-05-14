@@ -22,8 +22,10 @@ import {
   LessThanValidator,
   NotPastValidator,
   RequiredIfValidator,
+  RequiredIfValueValidator,
 } from '@/common/validators';
 import { PaginationDto } from '@/common/dto';
+import { VoucherQuestionCreateDto } from '@/voucher-questions/voucher-questions.dto';
 
 export class CampaignDto implements Campaign {
   @ApiProperty()
@@ -138,6 +140,18 @@ export class CampaignCreateFullDto extends CampaignCreateDto {
   @Type(() => VoucherDiscountCreateWithCampaignDto)
   @IsNotEmpty()
   voucherDiscounts: VoucherDiscountCreateWithCampaignDto[];
+
+  @ApiProperty({
+    required: false,
+    type: [VoucherQuestionCreateDto],
+  })
+  @Validate(RequiredIfValueValidator, [
+    'claimType',
+    VoucherClaimTypeEnum.QUESTIONS,
+  ])
+  @ValidateNested()
+  @Type(() => VoucherQuestionCreateDto)
+  questions?: VoucherQuestionCreateDto[];
 }
 
 export class CampaignUpdateDto implements Partial<Campaign> {
