@@ -4,6 +4,7 @@ import {
   VoucherDiscountType as baseType,
   VoucherClaimType as baseClaimType,
   VoucherCodeType as baseVoucherCodeType,
+  VoucherTicket,
 } from '@prisma/client';
 import {
   IsIn,
@@ -33,6 +34,30 @@ export enum VoucherClaimTypeEnum {
 export enum VoucherCodeTypeEnum {
   CLAIM = 'CLAIM',
   MANUAL = 'MANUAL',
+}
+
+export class VoucherTicketDto implements VoucherTicket {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  discountId: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  code: string | null;
+
+  @ApiProperty({
+    required: false,
+  })
+  isUsed: boolean;
+
+  @ApiProperty()
+  claimBy: number;
+
+  @ApiProperty()
+  claimAt: Date;
 }
 
 export class VoucherDiscountDto implements VoucherDiscount {
@@ -86,6 +111,12 @@ export class VoucherDiscountDto implements VoucherDiscount {
 
   @ApiProperty()
   createdAt: Date;
+
+  @ApiProperty({
+    required: false,
+    type: [VoucherTicketDto],
+  })
+  voucherTickets?: VoucherTicketDto[];
 }
 
 export class VoucherDiscountCreateWithCampaignDto
@@ -96,7 +127,7 @@ export class VoucherDiscountCreateWithCampaignDto
   })
   @IsOptional()
   @MaxLength(255)
-  description: string | null;
+  description?: string | null;
 
   @ApiProperty({
     enum: VoucherDiscountTypeEnum,
@@ -111,7 +142,7 @@ export class VoucherDiscountCreateWithCampaignDto
   })
   @IsOptional()
   @IsIn(Object.values(VoucherClaimTypeEnum))
-  claimType: VoucherClaimType | null;
+  claimType?: VoucherClaimType | null;
 
   @ApiProperty({
     required: false,
@@ -181,7 +212,7 @@ export class VoucherDiscountUpdateDto implements Partial<VoucherDiscount> {
   @TransformNumber()
   @IsOptional()
   @IsNumber()
-  claimMode: number | null;
+  claimMode?: number | null;
 
   @ApiProperty({
     required: false,
@@ -212,4 +243,17 @@ export class VoucherDiscountUpdateDto implements Partial<VoucherDiscount> {
   @IsOptional()
   @IsNumber()
   total: number;
+}
+
+export class VoucherTicketCreateDto implements Partial<VoucherTicket> {
+  @ApiProperty()
+  discountId: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  code?: string | null;
+
+  @ApiProperty()
+  claimBy: number;
 }

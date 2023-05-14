@@ -4,6 +4,7 @@ import {
   VoucherCodeTypeEnum,
   VoucherDiscountCreateDto,
   VoucherDiscountUpdateDto,
+  VoucherTicketCreateDto,
 } from './vouchers.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 
@@ -81,6 +82,90 @@ export class VouchersService {
       data: {
         codeType: VoucherCodeTypeEnum.CLAIM,
         ...options.data,
+      },
+    });
+  }
+
+  async findOneTicket(
+    options: {
+      id?: number;
+      claimBy?: number;
+      discountId?: number;
+    },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+    return await p.voucherTicket.findFirst({
+      where: {
+        id: options.id,
+        claimBy: options.claimBy,
+        discountId: options.discountId,
+      },
+    });
+  }
+
+  async createTicket(
+    data: VoucherTicketCreateDto,
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+
+    return await p.transactionLocal(async (prisma) => {
+      const discount = await prisma.voucherDiscount.findUnique({
+        where: {
+          id: data.discountId,
+        },
+      });
+
+      if (discount.total <= 0) throw new Error('Voucher is out of stock');
+
+      const ticket = await prisma.voucherTicket.create({
+        data,
+      });
+
+      await prisma.voucherDiscount.update({
+        where: {
+          id: data.discountId,
+        },
+        data: {
+          total: discount.total - 1,
+        },
+      });
+
+      return ticket;
+    }, as);
+  }
+
+  async listUserTicket(data: { userId: number }, as?: AsyncLocalStorage<any>) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+
+    return await p.campaign.findMany({
+      include: {
+        voucherDiscounts: {
+          include: {
+            voucherTickets: true,
+          },
+        },
+      },
+      where: {
+        voucherDiscounts: {
+          some: {
+            voucherTickets: {
+              some: {
+                claimBy: data.userId,
+              },
+            },
+          },
+        },
       },
     });
   }

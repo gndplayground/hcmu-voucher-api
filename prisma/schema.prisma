@@ -103,7 +103,7 @@ model VoucherDiscount {
   discount      Int
   total         Int
   createdAt     DateTime            @default(now())
-  VoucherTicket VoucherTicket[]
+  voucherTickets VoucherTicket[]
 }
 
 model VoucherTicket {
@@ -113,7 +113,7 @@ model VoucherTicket {
   code            String?
   isUsed          Boolean         @default(false)
   claimBy         Int
-  claimAt         DateTime?
+  claimAt         DateTime        @default(now())
   claimByUser     User            @relation(fields: [claimBy], references: [id])
 }
 
