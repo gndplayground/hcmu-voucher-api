@@ -1,7 +1,15 @@
+import { AsyncLocalStorage } from 'async_hooks';
 import { Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
 
-import { UserDto, UserEditDto, UserHideSensitiveDto } from './user.dto';
+import {
+  UserDto,
+  UserEditDto,
+  UserHideSensitiveDto,
+  UserProfileCreateDto,
+  UserProfileDto,
+  UserProfileUpdateDto,
+} from './user.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 
 // write a function random string max length 6
@@ -87,11 +95,20 @@ export class UserService {
     return u as any;
   }
 
-  async update(options: {
-    id: number;
-    data: UserEditDto;
-  }): Promise<UserHideSensitiveDto | undefined> {
+  async update(
+    options: {
+      id: number;
+      data: UserEditDto;
+    },
+    as?: AsyncLocalStorage<any>,
+  ): Promise<UserHideSensitiveDto | undefined> {
     const { id, data } = options;
+    const { profile, ...rest } = data;
+
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
 
     const user = await this.findOne({ id, hideSensitive: true });
 
@@ -99,18 +116,94 @@ export class UserService {
       return undefined;
     }
 
-    return await this.prisma.user.update({
+    return await p.transactionLocal(async (prisma) => {
+      const user = await prisma.user.update({
+        where: {
+          id,
+        },
+        data: {
+          ...rest,
+          seed:
+            data.isBlocked || data.isDisabled || data.password || data.role
+              ? randomString()
+              : undefined,
+        },
+        select: HIDE_SENSITIVE_FIELDS,
+      });
+      if (profile) {
+        await prisma.userProfile.upsert({
+          where: {
+            userId: user.id,
+          },
+          update: {
+            ...profile,
+            userId: user.id,
+          },
+          create: {
+            ...profile,
+            userId: user.id,
+          },
+        });
+      }
+      return user;
+    }, as);
+  }
+
+  async createProfile(
+    data: {
+      data: UserProfileCreateDto;
+      userId: number;
+    },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+    await p.userProfile.create({
+      data: {
+        ...data.data,
+        userId: data.userId,
+      },
+    });
+  }
+
+  async updateProfile(
+    data: {
+      data: UserProfileUpdateDto;
+      userId?: number;
+      id?: number;
+    },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+    await p.userProfile.update({
       where: {
-        id,
+        userId: data.userId,
+        id: data.id,
       },
       data: {
-        ...data,
-        seed:
-          data.isBlocked || data.isDisabled || data.password || data.role
-            ? randomString()
-            : undefined,
+        ...data.data,
       },
-      select: HIDE_SENSITIVE_FIELDS,
+    });
+  }
+
+  async findOneProfile(
+    query: { id?: number; userId?: number },
+    as?: AsyncLocalStorage<any>,
+  ): Promise<UserProfileDto> {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+    return p.userProfile.findUnique({
+      where: {
+        id: query.id,
+        userId: query.userId,
+      },
     });
   }
 }

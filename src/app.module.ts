@@ -9,6 +9,13 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { CompaniesModule } from './companies/companies.module';
+import { UploadModule } from './upload/upload.module';
+import { EmailModule } from './email/email.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
+import { VouchersModule } from './vouchers/vouchers.module';
+import { VoucherQuestionsModule } from './voucher-questions/voucher-questions.module';
+import { StoresModule } from './stores/stores.module';
 import config from './common/config';
 
 @Module({
@@ -31,6 +38,13 @@ import config from './common/config';
       },
     ]),
     AuthModule,
+    CompaniesModule,
+    UploadModule,
+    EmailModule,
+    CampaignsModule,
+    VouchersModule,
+    VoucherQuestionsModule,
+    StoresModule,
   ],
   controllers: [AppController],
   providers: [AppService],

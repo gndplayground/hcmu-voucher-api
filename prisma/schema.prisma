@@ -16,24 +16,149 @@ enum Role {
   COMPANY
 }
 
+enum VoucherDiscountType {
+  PERCENTAGE
+  AMOUNT
+}
+
+enum VoucherClaimType {
+  FASTEST
+  QUESTIONS
+  // RANDOM
+  // GAME
+}
+
+enum VoucherCodeType {
+  MANUAL
+  CLAIM
+}
+
 model User {
-  id          Int          @id @default(autoincrement())
-  email       String       @unique
-  password    String
-  role        Role
-  userProfile UserProfile?
-  createdAt   DateTime     @default(now())
-  seed     String?
-  isLocked Boolean @default(false)
-  isDisabled Boolean @default(false)
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  password       String
+  role           Role
+  createdAt      DateTime        @default(now())
+  seed           String?
+  isLocked       Boolean         @default(false)
+  isDisabled     Boolean         @default(false)
+  profile        UserProfile?
+  campaigns      Campaign[]
+  voucherTickets VoucherTicket[]
+}
+
+model Company {
+  id           Int           @id @default(autoincrement())
+  name         String
+  phone        String?
+  address      String?
+  logo         String?
+  createdAt    DateTime      @default(now())
+  isDisabled   Boolean?      @default(false)
+  isDeleted    Boolean?      @default(false)
+  userProfiles UserProfile[]
+  campaigns    Campaign[]
+  Store        Store[]
 }
 
 model UserProfile {
   id        Int      @id @default(autoincrement())
-  name      String
+  name      String?
   phone     String?
-  company   String?
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
   userId    Int      @unique
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model Campaign {
+  id               Int               @id @default(autoincrement())
+  name             String
+  description      String?
+  logo             String?
+  claimType        VoucherClaimType?
+  claimMode        Int?
+  isDeleted        Boolean?          @default(false)
+  startDate        DateTime
+  endDate          DateTime
+  createdAt        DateTime          @default(now())
+  createdBy        Int
+  createdByUser    User              @relation(fields: [createdBy], references: [id])
+  companyId        Int
+  company          Company           @relation(fields: [companyId], references: [id])
+  voucherDiscounts VoucherDiscount[]
+  voucherQuestions VoucherQuestion[]
+}
+
+model VoucherDiscount {
+  id               Int                 @id @default(autoincrement())
+  campaignId       Int
+  campaign         Campaign            @relation(fields: [campaignId], references: [id])
+  description      String?
+  type             VoucherDiscountType
+  claimType        VoucherClaimType?
+  claimMode        Int?
+  code             String?
+  codeType         VoucherCodeType
+  discount         Int
+  total            Int
+  createdAt        DateTime            @default(now())
+  voucherTickets   VoucherTicket[]
+  voucherQuestions VoucherQuestion[]
+}
+
+model VoucherTicket {
+  id              Int             @id @default(autoincrement())
+  discountId      Int
+  voucherDiscount VoucherDiscount @relation(fields: [discountId], references: [id])
+  code            String?
+  isUsed          Boolean         @default(false)
+  claimBy         Int
+  claimAt         DateTime        @default(now())
+  claimByUser     User            @relation(fields: [claimBy], references: [id])
+}
+
+model Store {
+  id        Int      @id @default(autoincrement())
+  name      String
+  latitude  Float?
+  longitude Float?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  openAt    String?
+  closeAt   String?
+  companyId Int
+  isDeleted Boolean? @default(false)
+  company   Company  @relation(fields: [companyId], references: [id])
+}
+
+enum VoucherQuestionType {
+  FREE
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+}
+
+model VoucherQuestion {
+  id                     Int                     @id @default(autoincrement())
+  question               String
+  type                   VoucherQuestionType
+  createdAt              DateTime                @default(now())
+  campaignId             Int?
+  campaign               Campaign?               @relation(fields: [campaignId], references: [id])
+  discountId             Int?
+  discount               VoucherDiscount?        @relation(fields: [discountId], references: [id])
+  isDeleted              Boolean?                @default(false)
+  voucherQuestionChoices VoucherQuestionChoice[]
+}
+
+model VoucherQuestionChoice {
+  id         Int             @id @default(autoincrement())
+  questionId Int
+  question   VoucherQuestion @relation(fields: [questionId], references: [id])
+  choice     String
+  isCorrect  Boolean?
+  isDeleted  Boolean?
+  createdAt  DateTime        @default(now())
 }

@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiCookieAuth,
   ApiExtraModels,
@@ -40,9 +41,11 @@ export class UserController {
     private authService: AuthService,
   ) {}
 
+  @Get()
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard)
   @ApiCookieAuth()
+  @ApiBearerAuth()
   @ApiQuery({ name: 'page', type: 'number', required: true })
   @ApiQuery({ name: 'limit', type: 'number', required: true })
   @ApiQuery({ name: 'search', type: 'string', required: false })
@@ -70,7 +73,6 @@ export class UserController {
       },
     },
   })
-  @Get()
   async getAll(@Query() queryParams: PaginationDto) {
     const { limit, page, search } = queryParams;
 
@@ -98,6 +100,7 @@ export class UserController {
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard)
   @ApiCookieAuth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new users' })
   @ApiExtraModels(UserDto)
   @ApiResponse({
@@ -136,6 +139,7 @@ export class UserController {
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard)
   @ApiCookieAuth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by id' })
   @ApiExtraModels(UserHideSensitiveDto)
   @ApiResponse({
@@ -168,6 +172,7 @@ export class UserController {
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard)
   @ApiCookieAuth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Edit user' })
   @ApiExtraModels(UserHideSensitiveDto)
   @ApiResponse({
