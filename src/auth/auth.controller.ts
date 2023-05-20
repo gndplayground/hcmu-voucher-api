@@ -22,10 +22,9 @@ import { AuthService } from './auth.service';
 import { LoginDto, UserPayloadDto } from './auth.dto';
 import { RefreshGuard } from './refresh.guard';
 import { UserDeco } from './auth.decorator';
-import { AuthGuard } from './auth.guard';
 import { AppConfig } from '@/common/config';
 import { AppRequest, AppResponse } from '@/common/types/app';
-import { UserDto } from '@/user/user.dto';
+import { UserDto, UserProfileDto } from '@/user/user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -36,9 +35,30 @@ export class AuthController {
 
   @ApiTags('auth')
   @ApiOperation({ summary: 'Login cookie' })
-  @ApiOkResponse({ description: 'Login success' })
   @ApiBadRequestResponse({ description: 'Bad Request' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOkResponse({
+    description: 'Login success',
+    schema: {
+      properties: {
+        data: {
+          properties: {
+            user: {
+              $ref: getSchemaPath(UserDto),
+            },
+            profile: {
+              nullable: true,
+              oneOf: [
+                {
+                  $ref: getSchemaPath(UserProfileDto),
+                },
+              ],
+            },
+          },
+        },
+      },
+    },
+  })
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
@@ -53,7 +73,7 @@ export class AuthController {
       throw new UnauthorizedException();
     }
 
-    const { token, user } = result;
+    const { token, user, profile } = result;
 
     res.cookie('token', token, {
       httpOnly: true,
@@ -63,13 +83,14 @@ export class AuthController {
     return {
       data: {
         user,
+        profile,
       },
     };
   }
 
   @ApiTags('auth')
   @ApiOperation({ summary: 'Login stateless' })
-  @ApiExtraModels(UserDto)
+  @ApiExtraModels(UserDto, UserProfileDto)
   @ApiOkResponse({
     description: 'Login success',
     schema: {
@@ -81,6 +102,14 @@ export class AuthController {
             },
             user: {
               $ref: getSchemaPath(UserDto),
+            },
+            profile: {
+              nullable: true,
+              oneOf: [
+                {
+                  $ref: getSchemaPath(UserProfileDto),
+                },
+              ],
             },
           },
         },
@@ -97,12 +126,13 @@ export class AuthController {
       throw new UnauthorizedException();
     }
 
-    const { token, user } = result;
+    const { token, user, profile } = result;
 
     return {
       data: {
         token,
         user,
+        profile,
       },
     };
   }
@@ -146,7 +176,6 @@ export class AuthController {
     };
   }
 
-  @UseGuards(AuthGuard)
   @ApiTags('auth')
   @ApiOperation({ summary: 'Logout' })
   @ApiOkResponse({

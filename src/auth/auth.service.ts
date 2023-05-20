@@ -6,7 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto, UserPayloadDto } from './auth.dto';
 import { UserService } from '@/user/user.service';
 import { AppConfig } from '@/common/config';
-import { UserDto } from '@/user/user.dto';
+import { UserDto, UserProfileDto } from '@/user/user.dto';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +27,11 @@ export class AuthService {
       return false;
     }
 
-    const payload = this.createTokenPayload(user);
+    const profile = await this.userService.findOneProfile({
+      userId: user.id,
+    });
+
+    const payload = this.createTokenPayload(user, profile);
 
     const token = await this.createToken(payload);
 
@@ -38,6 +42,7 @@ export class AuthService {
     return {
       token,
       user,
+      profile,
     };
   }
 
@@ -60,7 +65,11 @@ export class AuthService {
       return false;
     }
 
-    const userPayload = this.createTokenPayload(user);
+    const profile = await this.userService.findOneProfile({
+      userId: user.id,
+    });
+
+    const userPayload = this.createTokenPayload(user, profile);
 
     const token = await this.createToken(userPayload);
 
@@ -74,12 +83,16 @@ export class AuthService {
     };
   }
 
-  private createTokenPayload(user: UserDto): UserPayloadDto {
+  private createTokenPayload(
+    user: UserDto,
+    profile?: UserProfileDto,
+  ): UserPayloadDto {
     return {
       id: user.id,
       email: user.email,
       role: user.role,
       seed: user.seed,
+      companyId: profile?.companyId,
     };
   }
 

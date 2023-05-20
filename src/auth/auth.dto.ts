@@ -13,6 +13,9 @@ export class UserPayloadDto {
 
   @ApiProperty()
   seed: string;
+
+  @ApiProperty()
+  companyId?: number;
 }
 
 export class LoginDto {
