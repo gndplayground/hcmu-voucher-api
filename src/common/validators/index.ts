@@ -54,7 +54,6 @@ export class RequiredIfValueValidator implements ValidatorConstraintInterface {
   validate(value: any, args: ValidationArguments) {
     const [relatedPropertyName, relatedPropertyValueWant] = args.constraints;
     const relatedValue = (args.object as any)[relatedPropertyName];
-    console.log(value, args);
     // related value is not equal to the value we want
     if (relatedValue !== relatedPropertyValueWant) {
       return true;

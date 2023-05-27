@@ -6,8 +6,16 @@ import { UploadModule } from '@/upload/upload.module';
 import { VouchersModule } from '@/vouchers/vouchers.module';
 import { UserModule } from '@/user/user.module';
 
+import { VoucherQuestionsModule } from '@/voucher-questions/voucher-questions.module';
+
 @Module({
-  imports: [PrismaModule, UploadModule, VouchersModule, UserModule],
+  imports: [
+    PrismaModule,
+    UploadModule,
+    VouchersModule,
+    UserModule,
+    VoucherQuestionsModule,
+  ],
   providers: [CampaignsService],
   controllers: [CampaignsController],
 })

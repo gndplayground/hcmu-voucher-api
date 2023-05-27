@@ -8,15 +8,23 @@ import {
   CampaignUpdateDto,
 } from './campaigns.dto';
 import { PrismaService } from '@/prisma/prisma.service';
-import { VoucherDiscountCreateWithCampaignDto } from '@/vouchers/vouchers.dto';
+import {
+  VoucherDiscountCreateWithCampaignDto,
+  VoucherDiscountUpdateWithCampaignDto,
+} from '@/vouchers/vouchers.dto';
 import { VouchersService } from '@/vouchers/vouchers.service';
-import { VoucherQuestionCreateDto } from '@/voucher-questions/voucher-questions.dto';
+import {
+  VoucherQuestionCreateDto,
+  VoucherQuestionUpdateWithCampaignDto,
+} from '@/voucher-questions/voucher-questions.dto';
+import { VoucherQuestionsService } from '@/voucher-questions/voucher-questions.service';
 
 @Injectable()
 export class CampaignsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly vouchersService: VouchersService,
+    private readonly voucherQuestionsService: VoucherQuestionsService,
   ) {}
 
   async list(
@@ -27,6 +35,7 @@ export class CampaignsService {
       isDisabled?: boolean;
       isDeleted?: boolean;
       progress?: CampaignProgressEnum;
+      companyId?: number;
     } = {},
     as?: AsyncLocalStorage<any>,
   ) {
@@ -78,13 +87,26 @@ export class CampaignsService {
         },
         ...dateFilter,
         isDeleted: options.isDeleted || false,
+        companyId: options.companyId,
       },
       orderBy: {
         createdAt: 'desc',
       },
       include: {
-        voucherDiscounts: true,
-        voucherQuestions: true,
+        voucherDiscounts: {
+          where: {
+            isDeleted: {
+              equals: false,
+            },
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+          include: {
+            voucherQuestions: false,
+            voucherTickets: false,
+          },
+        },
       },
     });
   }
@@ -97,9 +119,58 @@ export class CampaignsService {
       this.prisma,
       as,
     );
-    const result = (await p.campaign.findUnique({
+    const result = (await p.campaign.findFirst({
       where: {
         id: query.id,
+      },
+      include: {
+        voucherDiscounts: {
+          where: {
+            isDeleted: {
+              equals: false,
+            },
+          },
+          include: {
+            voucherQuestions: {
+              where: {
+                isDeleted: false,
+              },
+              orderBy: {
+                createdAt: 'asc',
+              },
+              include: {
+                voucherQuestionChoices: {
+                  where: {
+                    isDeleted: {
+                      equals: false,
+                    },
+                  },
+                  orderBy: {
+                    createdAt: 'asc',
+                  },
+                },
+              },
+            },
+          },
+        },
+        voucherQuestions: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+          where: {
+            isDeleted: false,
+          },
+          include: {
+            voucherQuestionChoices: {
+              where: {
+                isDeleted: false,
+              },
+              orderBy: {
+                createdAt: 'asc',
+              },
+            },
+          },
+        },
       },
     })) as CampaignDto;
 
@@ -148,6 +219,63 @@ export class CampaignsService {
     });
   }
 
+  async updateFull(
+    data: {
+      id: number;
+      campaign: CampaignUpdateDto;
+      discounts: VoucherDiscountUpdateWithCampaignDto[];
+      questions?: VoucherQuestionUpdateWithCampaignDto[];
+      userCompanyId: number;
+    },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+
+    return await p.transaction(async (ctx, pt) => {
+      const questionsUpdate = data.questions?.filter((q) => !!q.id) || [];
+
+      const questionsCreateNew =
+        data.questions
+          ?.filter((q) => !q.id)
+          ?.map((q) => {
+            const { ...other } = q;
+            return {
+              ...other,
+              campaignId: data.id,
+            };
+          }) || [];
+
+      await pt.campaign.update({
+        where: {
+          id: data.id,
+        },
+        data: {
+          ...data.campaign,
+        },
+      });
+
+      await this.voucherQuestionsService.updateMany(
+        {
+          userCompanyId: data.userCompanyId,
+          data: [questionsUpdate, questionsCreateNew].flat(),
+        },
+        ctx,
+      );
+
+      await this.vouchersService.updateManyDiscount(
+        {
+          userCompanyId: data.userCompanyId,
+          data: data.discounts,
+          campaignId: data.id,
+        },
+        ctx,
+      );
+    });
+  }
+
   async create(
     data: {
       campaign: CampaignCreateDto;
@@ -184,33 +312,28 @@ export class CampaignsService {
     });
   }
 
-  async update({
-    id,
-    data,
-  }: {
-    id: number;
-    data: CampaignUpdateDto;
-  }): Promise<CampaignDto> {
-    return await this.prisma.campaign.update({
+  async update(
+    {
+      id,
+      data,
+    }: {
+      id: number;
+      data: CampaignUpdateDto;
+    },
+    as?: AsyncLocalStorage<any>,
+  ): Promise<CampaignDto> {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+
+    return await p.campaign.update({
       where: {
         id,
       },
       data: {
         ...data,
       },
-    });
-  }
-
-  async test1(as1?: AsyncLocalStorage<any>) {
-    await this.prisma.transaction(async (as) => {
-      await this.list({}, as);
-    }, as1);
-  }
-
-  async test() {
-    await this.prisma.transaction(async (as) => {
-      await this.list({}, as);
-      await this.test1(as);
     });
   }
 }

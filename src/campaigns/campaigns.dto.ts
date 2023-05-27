@@ -16,6 +16,7 @@ import {
   VoucherClaimTypeEnum,
   VoucherDiscountCreateWithCampaignDto,
   VoucherDiscountDto,
+  VoucherDiscountUpdateWithCampaignDto,
 } from '@/vouchers/vouchers.dto';
 import { TransformBoolean, TransformNumber } from '@/common/transforms';
 import {
@@ -25,7 +26,10 @@ import {
   RequiredIfValueValidator,
 } from '@/common/validators';
 import { PaginationDto } from '@/common/dto';
-import { VoucherQuestionCreateDto } from '@/voucher-questions/voucher-questions.dto';
+import {
+  VoucherQuestionCreateDto,
+  VoucherQuestionUpdateWithCampaignDto,
+} from '@/voucher-questions/voucher-questions.dto';
 
 export class CampaignDto implements Campaign {
   @ApiProperty()
@@ -224,6 +228,28 @@ export class CampaignUpdateDto implements Partial<Campaign> {
   shouldDeletePhoto?: boolean;
 }
 
+export class CampaignUpdateFullDto extends CampaignUpdateDto {
+  @ApiProperty({
+    type: [VoucherDiscountUpdateWithCampaignDto],
+  })
+  @ValidateNested()
+  @Type(() => VoucherDiscountUpdateWithCampaignDto)
+  @IsNotEmpty()
+  voucherDiscounts: VoucherDiscountUpdateWithCampaignDto[];
+
+  @ApiProperty({
+    required: false,
+    type: [VoucherQuestionUpdateWithCampaignDto],
+  })
+  @Validate(RequiredIfValueValidator, [
+    'claimType',
+    VoucherClaimTypeEnum.QUESTIONS,
+  ])
+  @ValidateNested()
+  @Type(() => VoucherQuestionUpdateWithCampaignDto)
+  questions?: VoucherQuestionUpdateWithCampaignDto[];
+}
+
 export enum CampaignProgressEnum {
   UPCOMING = 'upcoming',
   ONGOING = 'ongoing',
@@ -233,4 +259,8 @@ export enum CampaignProgressEnum {
 export class CampaignListQueryDto extends PaginationDto {
   @IsOptional()
   filterByProgress?: CampaignProgressEnum;
+
+  @TransformNumber()
+  @IsOptional()
+  companyId?: number;
 }

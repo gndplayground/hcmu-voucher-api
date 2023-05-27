@@ -16,8 +16,12 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { Optional } from '@nestjs/common';
 import { TransformNumber } from '@/common/transforms';
-import { VoucherQuestionCreateDto } from '@/voucher-questions/voucher-questions.dto';
+import {
+  VoucherQuestionCreateDto,
+  VoucherQuestionUpdateWithCampaignDto,
+} from '@/voucher-questions/voucher-questions.dto';
 import { RequiredIfValueValidator } from '@/common/validators';
 
 export type VoucherDiscountType = (typeof baseType)[keyof typeof baseType];
@@ -134,6 +138,11 @@ export class VoucherDiscountDto implements VoucherDiscount {
   ])
   @Type(() => VoucherQuestionCreateDto)
   questions?: VoucherQuestionCreateDto[];
+
+  @ApiProperty({
+    required: false,
+  })
+  isDeleted: boolean | null;
 }
 
 export class VoucherDiscountCreateWithCampaignDto
@@ -207,6 +216,97 @@ export class VoucherDiscountCreateWithCampaignDto
   questions?: VoucherQuestionCreateDto[];
 }
 
+export class VoucherDiscountUpdateWithCampaignDto {
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  id?: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  isDeleted?: boolean;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  @MaxLength(255)
+  description?: string | null;
+
+  @ApiProperty({
+    enum: VoucherDiscountTypeEnum,
+  })
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  @IsIn(Object.values(VoucherDiscountTypeEnum))
+  type?: VoucherDiscountType;
+
+  @ApiProperty({
+    required: false,
+    enum: VoucherClaimTypeEnum,
+  })
+  @IsOptional()
+  @IsIn(Object.values(VoucherClaimTypeEnum))
+  claimType?: VoucherClaimType | null;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  @TransformNumber()
+  @IsNumber()
+  claimMode?: number | null;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  code?: string | null;
+
+  @ApiProperty({
+    enum: VoucherCodeTypeEnum,
+  })
+  @IsOptional()
+  @IsIn(Object.values(VoucherCodeTypeEnum))
+  codeType?: VoucherCodeType;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  @TransformNumber()
+  @IsNotEmpty()
+  @IsNumber()
+  discount?: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  @TransformNumber()
+  @IsNotEmpty()
+  @IsNumber()
+  total: number;
+
+  @ApiProperty({
+    required: false,
+    type: [VoucherQuestionUpdateWithCampaignDto],
+  })
+  @Validate(RequiredIfValueValidator, [
+    'claimType',
+    VoucherClaimTypeEnum.QUESTIONS,
+  ])
+  @ValidateNested()
+  @Type(() => VoucherQuestionUpdateWithCampaignDto)
+  @Optional()
+  questions: VoucherQuestionUpdateWithCampaignDto[];
+}
+
 export class VoucherDiscountCreateDto extends VoucherDiscountCreateWithCampaignDto {
   @ApiProperty()
   @IsNotEmpty()
@@ -272,6 +372,12 @@ export class VoucherDiscountUpdateDto implements Partial<VoucherDiscount> {
   @IsOptional()
   @IsNumber()
   total: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  isDeleted: boolean;
 }
 
 export class VoucherTicketCreateDto implements Partial<VoucherTicket> {

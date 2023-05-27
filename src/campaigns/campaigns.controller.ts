@@ -16,6 +16,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  Response,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -39,6 +40,7 @@ import {
   CampaignListQueryDto,
   CampaignProgressEnum,
   CampaignUpdateDto,
+  CampaignUpdateFullDto,
 } from './campaigns.dto';
 import { UploadService } from '@/upload/upload.service';
 import { AuthGuard } from '@/auth/auth.guard';
@@ -57,9 +59,10 @@ import {
   VoucherQuestionChoiceCreateDto,
   VoucherQuestionCreateDto,
 } from '@/voucher-questions/voucher-questions.dto';
+import { AppResponse } from '@/common/types/app';
 
-@Controller('campagins')
-@ApiTags('campagins')
+@Controller('campaigns')
+@ApiTags('campaigns')
 export class CampaignsController {
   constructor(
     private readonly campaignsService: CampaignsService,
@@ -113,20 +116,27 @@ export class CampaignsController {
     required: false,
     enum: Object.values(CampaignProgressEnum),
   })
+  @ApiQuery({
+    name: 'companyId',
+    required: false,
+    type: Number,
+  })
   async list(@Query() queryParams: CampaignListQueryDto) {
-    const { limit, page, search, filterByProgress } = queryParams;
+    const { limit, page, search, filterByProgress, companyId } = queryParams;
     const [currentPage, nextPage] = await Promise.all([
       await this.campaignsService.list({
         limit: limit || 10,
         page: page || 1,
         search,
         progress: filterByProgress,
+        companyId,
       }),
       await this.campaignsService.list({
         limit: limit || 10,
         page: page + 1 || 2,
         search,
         progress: filterByProgress,
+        companyId,
       }),
     ]);
     return {
@@ -209,9 +219,10 @@ export class CampaignsController {
 
     const discount = await this.voucherService.findOneDiscount({
       id: Number(discountId),
+      campaignId: find.id,
     });
 
-    if (!find && discount.campaignId !== find.id) {
+    if (!discount) {
       throw new NotFoundException('Discount not found');
     }
 
@@ -478,6 +489,65 @@ export class CampaignsController {
     }
   }
 
+  @Patch(':id/full')
+  @Roles(Role.COMPANY)
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update campaign' })
+  @ApiBody({
+    schema: {
+      $ref: getSchemaPath(CampaignUpdateFullDto),
+    },
+  })
+  @ApiExtraModels(CampaignUpdateFullDto)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Success',
+  })
+  async updateFull(
+    @Response({
+      passthrough: true,
+    })
+    res: AppResponse,
+    @UserDeco() userPayload: UserPayloadDto,
+    @Body()
+    data: CampaignUpdateFullDto,
+    @Param('id') campId: string,
+  ) {
+    const profile = await this.userService.findOneProfile({
+      userId: userPayload.id,
+    });
+
+    if (!profile || !profile.companyId) {
+      throw new ForbiddenException('Profile not found');
+    }
+
+    const find = await this.campaignsService.findOne({
+      id: Number(campId),
+    });
+
+    if (!find) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    if (profile.companyId !== find.companyId) {
+      throw new ForbiddenException(
+        'You are not allowed to update this campaign',
+      );
+    }
+
+    const { voucherDiscounts, questions, ...others } = data;
+
+    await this.campaignsService.updateFull({
+      id: Number(campId),
+      campaign: others,
+      discounts: voucherDiscounts,
+      questions: questions,
+      userCompanyId: profile.companyId,
+    });
+  }
+
   @Post('')
   @Roles(Role.COMPANY)
   @UseGuards(AuthGuard)
@@ -534,6 +604,32 @@ export class CampaignsController {
 
     return {
       data: c,
+    };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'get campaign detail' })
+  @ApiExtraModels(CampaignDto)
+  @ApiResponse({
+    schema: {
+      properties: {
+        data: {
+          $ref: getSchemaPath(CampaignDto),
+        },
+      },
+    },
+  })
+  async getDetail(@Param('id') id: string) {
+    const campaign = await this.campaignsService.findOne({
+      id: Number(id),
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    return {
+      data: campaign,
     };
   }
 }

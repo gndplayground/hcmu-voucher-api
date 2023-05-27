@@ -106,6 +106,7 @@ model VoucherDiscount {
   createdAt        DateTime            @default(now())
   voucherTickets   VoucherTicket[]
   voucherQuestions VoucherQuestion[]
+  isDeleted        Boolean?            @default(false)
 }
 
 model VoucherTicket {
@@ -159,6 +160,6 @@ model VoucherQuestionChoice {
   question   VoucherQuestion @relation(fields: [questionId], references: [id])
   choice     String
   isCorrect  Boolean?
-  isDeleted  Boolean?
+  isDeleted  Boolean?        @default(false)
   createdAt  DateTime        @default(now())
 }

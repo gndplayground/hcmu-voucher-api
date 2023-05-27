@@ -1,16 +1,22 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { Injectable } from '@nestjs/common';
+import { VoucherDiscount } from '@prisma/client';
 import {
   VoucherCodeTypeEnum,
   VoucherDiscountCreateDto,
   VoucherDiscountUpdateDto,
+  VoucherDiscountUpdateWithCampaignDto,
   VoucherTicketCreateDto,
 } from './vouchers.dto';
 import { PrismaService } from '@/prisma/prisma.service';
+import { VoucherQuestionsService } from '@/voucher-questions/voucher-questions.service';
 
 @Injectable()
 export class VouchersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly voucherQuestionService: VoucherQuestionsService,
+  ) {}
 
   async listDiscount(
     options: {
@@ -30,7 +36,14 @@ export class VouchersService {
         createdAt: 'desc',
       },
       include: {
-        voucherQuestions: true,
+        voucherQuestions: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+          where: {
+            isDeleted: false,
+          },
+        },
       },
     });
   }
@@ -38,6 +51,7 @@ export class VouchersService {
   async findOneDiscount(
     options: {
       id?: number;
+      campaignId?: number;
     },
     as?: AsyncLocalStorage<any>,
   ) {
@@ -45,9 +59,13 @@ export class VouchersService {
       this.prisma,
       as,
     );
-    return await p.voucherDiscount.findUnique({
+    return await p.voucherDiscount.findFirst({
       where: {
         id: options.id,
+        campaignId: options.campaignId,
+      },
+      include: {
+        voucherQuestions: true,
       },
     });
   }
@@ -191,5 +209,56 @@ export class VouchersService {
         },
       },
     });
+  }
+
+  async updateManyDiscount(
+    options: {
+      data: VoucherDiscountUpdateWithCampaignDto[];
+      campaignId?: number;
+      userCompanyId: number;
+    },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+
+    const update = async (discount: VoucherDiscountUpdateWithCampaignDto) => {
+      const { questions = [], id, ...others } = discount;
+
+      let finalDiscount: VoucherDiscount;
+
+      if (id) {
+        finalDiscount = await p.voucherDiscount.update({
+          where: {
+            id: id,
+          },
+          data: {
+            ...others,
+          },
+        });
+      } else {
+        finalDiscount = await p.voucherDiscount.create({
+          data: {
+            ...(others as any),
+            campaignId: options.campaignId,
+          },
+        });
+      }
+
+      await this.voucherQuestionService.updateMany(
+        {
+          userCompanyId: options.userCompanyId,
+          data: questions.map((q) => {
+            q.discountId = finalDiscount.id;
+            return q;
+          }),
+        },
+        as,
+      );
+    };
+
+    await Promise.all(options.data.map(update));
   }
 }

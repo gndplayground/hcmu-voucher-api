@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MaxLength, Validate } from 'class-validator';
+import { IsOptional, MaxLength, Validate } from 'class-validator';
 import {
   VoucherQuestion,
   VoucherQuestionChoice,
@@ -54,6 +54,18 @@ export class VoucherQuestionChoiceCreateDto
   isCorrect: boolean | null;
 }
 
+export class VoucherQuestionChoiceUpdateWithCampaign extends VoucherQuestionChoiceCreateDto {
+  @ApiProperty({
+    required: false,
+  })
+  id?: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  isDeleted?: boolean;
+}
+
 export class VoucherQuestionChoiceUpdateDto
   implements Partial<VoucherQuestionChoiceCreateDto>
 {
@@ -71,7 +83,7 @@ export class VoucherQuestionChoiceUpdateDto
   @ApiProperty({
     required: false,
   })
-  isDeleted: boolean | null;
+  isDeleted?: boolean | null;
 }
 
 export class VoucherQuestionDto implements VoucherQuestion {
@@ -132,6 +144,59 @@ export class VoucherQuestionCreateDto implements Partial<VoucherQuestionDto> {
     VoucherQuestionTypeEnum.SINGLE_CHOICE,
   ])
   choices?: VoucherQuestionChoiceCreateDto[];
+}
+
+export class VoucherQuestionUpdateWithCampaignDto
+  implements Partial<VoucherQuestionDto>
+{
+  @ApiProperty({
+    required: false,
+  })
+  id?: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  isDeleted?: boolean;
+
+  @ApiProperty({
+    required: false,
+  })
+  @MaxLength(255)
+  @IsOptional()
+  question?: string;
+
+  @ApiProperty({
+    enum: VoucherQuestionTypeEnum,
+    required: false,
+  })
+  @IsOptional()
+  type?: VoucherQuestionType;
+
+  @ApiProperty({
+    type: [VoucherQuestionChoiceUpdateWithCampaign],
+    required: false,
+  })
+  @Validate(RequiredIfValueValidator, [
+    'type',
+    VoucherQuestionTypeEnum.MULTIPLE_CHOICE,
+  ])
+  @Validate(RequiredIfValueValidator, [
+    'type',
+    VoucherQuestionTypeEnum.SINGLE_CHOICE,
+  ])
+  @IsOptional()
+  choices?: VoucherQuestionChoiceUpdateWithCampaign[];
+
+  @ApiProperty({
+    required: false,
+  })
+  campaignId?: number | null;
+
+  @ApiProperty({
+    required: false,
+  })
+  discountId?: number | null;
 }
 
 export class VoucherQuestionUpdateDto implements Partial<VoucherQuestionDto> {

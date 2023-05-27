@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -71,10 +70,6 @@ export class VoucherQuestionsController {
   })
   async list(@Query() query: VoucherQuestionsListQueryDto) {
     const { campaignId, discountId } = query;
-
-    if (!campaignId && !discountId) {
-      throw new BadRequestException('campaignId or discountId is required');
-    }
 
     const questions = await this.voucherQuestionsService.list({
       campaignId,

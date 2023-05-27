@@ -1,8 +1,10 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { ForbiddenException, Injectable } from '@nestjs/common';
+import { VoucherQuestion } from '@prisma/client';
 import {
   VoucherQuestionChoiceUpdateDto,
   VoucherQuestionUpdateDto,
+  VoucherQuestionUpdateWithCampaignDto,
 } from './voucher-questions.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 
@@ -24,10 +26,14 @@ export class VoucherQuestionsService {
         discountId: options.discountId,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: 'asc',
       },
       include: {
-        voucherQuestionChoices: true,
+        voucherQuestionChoices: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
       },
     });
   }
@@ -95,6 +101,13 @@ export class VoucherQuestionsService {
       where: {
         id: options.id,
       },
+      include: {
+        voucherQuestionChoices: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
     });
   }
 
@@ -145,5 +158,102 @@ export class VoucherQuestionsService {
         id: options.id,
       },
     });
+  }
+
+  async updateMany(
+    options: {
+      data: VoucherQuestionUpdateWithCampaignDto[];
+      userCompanyId: number;
+    },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prismaService,
+      as,
+    );
+
+    const update = async (question: VoucherQuestionUpdateWithCampaignDto) => {
+      if (question.id) {
+        const currentQuestion = await this.findOne({
+          id: question.id,
+        });
+
+        if (currentQuestion.campaignId) {
+          const campaign = await p.campaign.findUnique({
+            where: {
+              id: currentQuestion.campaignId,
+            },
+          });
+
+          if (campaign.companyId !== options.userCompanyId) {
+            throw new ForbiddenException(
+              'You are not allowed to edit this question',
+            );
+          }
+        } else if (currentQuestion.discountId) {
+          const discount = await p.voucherDiscount.findUnique({
+            where: {
+              id: currentQuestion.discountId,
+            },
+            include: {
+              campaign: true,
+            },
+          });
+
+          if (discount.campaign.companyId !== options.userCompanyId) {
+            throw new ForbiddenException(
+              'You are not allowed to edit this question',
+            );
+          }
+        }
+      }
+
+      const { choices = [], id, ...others } = question;
+      let finalQuestion: VoucherQuestion;
+      if (id) {
+        finalQuestion = await p.voucherQuestion.update({
+          where: {
+            id: id,
+          },
+          data: others,
+        });
+      } else {
+        finalQuestion = await p.voucherQuestion.create({
+          data: others as any,
+        });
+      }
+
+      await Promise.all(
+        [
+          choices
+            .filter((choice) => choice.id)
+            .map((choice) => {
+              return this.updateChoice(
+                {
+                  id: choice.id,
+                  data: choice,
+                },
+                as,
+              );
+            }),
+          choices
+            .filter((choice) => !choice.id)
+            .map((choice) => {
+              return p.voucherQuestionChoice.create({
+                data: {
+                  ...choice,
+                  questionId: finalQuestion.id,
+                },
+              });
+            }),
+        ].flat(),
+      );
+    };
+
+    await Promise.all(
+      options.data.map((question) => {
+        return update(question);
+      }),
+    );
   }
 }

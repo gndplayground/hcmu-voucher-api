@@ -26,20 +26,26 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
    * });
    */
   async transaction<T>(
-    cb: (ctx: AsyncLocalStorage<any>) => Promise<T>,
+    cb: (
+      ctx: AsyncLocalStorage<any>,
+      prisma: Omit<
+        PrismaClient,
+        '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'
+      >,
+    ) => Promise<T>,
     asOuter?: AsyncLocalStorage<any>,
   ): Promise<T> {
     if (asOuter) {
       const data = asOuter ? asOuter.getStore() : undefined;
       if (data?.tx) {
-        return await cb(asOuter);
+        return await cb(asOuter, data.tx);
       }
     }
 
     return await this.$transaction(async (tx) => {
       const asyncLocalStorage = new AsyncLocalStorage();
-      return await asyncLocalStorage.run({ tx }, async () => {
-        return await cb(asyncLocalStorage);
+      return await asyncLocalStorage.run({ tx, test: 'test' }, async () => {
+        return await cb(asyncLocalStorage, tx);
       });
     });
   }
@@ -63,8 +69,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   static getPrismaInstanceFromAsyncLocalStorage(
     fallback: PrismaService,
     asyncLocalStorage?: AsyncLocalStorage<any> | null,
+    debug?: string,
   ): PrismaService {
     const data = asyncLocalStorage ? asyncLocalStorage.getStore() : undefined;
+
+    if (debug) {
+      console.log(data?.tx ? 'have tx' : 'no tx');
+      console.log('Debug: ', debug);
+    }
     return data?.tx || fallback;
   }
 }
