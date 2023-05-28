@@ -34,17 +34,19 @@ enum VoucherCodeType {
 }
 
 model User {
-  id             Int             @id @default(autoincrement())
-  email          String          @unique
-  password       String
-  role           Role
-  createdAt      DateTime        @default(now())
-  seed           String?
-  isLocked       Boolean         @default(false)
-  isDisabled     Boolean         @default(false)
-  profile        UserProfile?
-  campaigns      Campaign[]
-  voucherTickets VoucherTicket[]
+  id                       Int                       @id @default(autoincrement())
+  email                    String                    @unique
+  password                 String
+  role                     Role
+  createdAt                DateTime                  @default(now())
+  seed                     String?
+  isLocked                 Boolean                   @default(false)
+  isDisabled               Boolean                   @default(false)
+  profile                  UserProfile?
+  campaigns                Campaign[]
+  voucherTickets           VoucherTicket[]
+  sharedTickets            VoucherTicket[]           @relation("OwnedByUser")
+  userClaimQuestionAnswers UserClaimQuestionAnswer[]
 }
 
 model Company {
@@ -103,6 +105,7 @@ model VoucherDiscount {
   codeType         VoucherCodeType
   discount         Int
   total            Int
+  claimed          Int                 @default(0)
   createdAt        DateTime            @default(now())
   voucherTickets   VoucherTicket[]
   voucherQuestions VoucherQuestion[]
@@ -110,14 +113,62 @@ model VoucherDiscount {
 }
 
 model VoucherTicket {
-  id              Int             @id @default(autoincrement())
-  discountId      Int
-  voucherDiscount VoucherDiscount @relation(fields: [discountId], references: [id])
-  code            String?
-  isUsed          Boolean         @default(false)
-  claimBy         Int
-  claimAt         DateTime        @default(now())
-  claimByUser     User            @relation(fields: [claimBy], references: [id])
+  id                       Int                       @id @default(autoincrement())
+  discountId               Int
+  voucherDiscount          VoucherDiscount           @relation(fields: [discountId], references: [id])
+  code                     String?
+  isUsed                   Boolean                   @default(false)
+  claimBy                  Int
+  claimAt                  DateTime                  @default(now())
+  claimByUser              User                      @relation(fields: [claimBy], references: [id])
+  ownedBy                  Int?
+  ownedByUser              User?                     @relation(fields: [ownedBy], references: [id], name: "OwnedByUser")
+  userClaimQuestionAnswers UserClaimQuestionAnswer[]
+}
+
+enum VoucherQuestionType {
+  FREE
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+}
+
+model VoucherQuestion {
+  id                      Int                       @id @default(autoincrement())
+  question                String
+  type                    VoucherQuestionType
+  createdAt               DateTime                  @default(now())
+  campaignId              Int?
+  campaign                Campaign?                 @relation(fields: [campaignId], references: [id])
+  discountId              Int?
+  discount                VoucherDiscount?          @relation(fields: [discountId], references: [id])
+  isDeleted               Boolean?                  @default(false)
+  voucherQuestionChoices  VoucherQuestionChoice[]
+  UserClaimQuestionAnswer UserClaimQuestionAnswer[]
+}
+
+model VoucherQuestionChoice {
+  id                      Int                       @id @default(autoincrement())
+  questionId              Int
+  question                VoucherQuestion           @relation(fields: [questionId], references: [id])
+  choice                  String
+  isCorrect               Boolean?
+  isDeleted               Boolean?                  @default(false)
+  createdAt               DateTime                  @default(now())
+  UserClaimQuestionAnswer UserClaimQuestionAnswer[]
+}
+
+model UserClaimQuestionAnswer {
+  id         Int                    @id @default(autoincrement())
+  userId     Int
+  user       User                   @relation(fields: [userId], references: [id])
+  questionId Int
+  question   VoucherQuestion        @relation(fields: [questionId], references: [id])
+  textAnswer String?
+  choiceId   Int?
+  choice     VoucherQuestionChoice? @relation(fields: [choiceId], references: [id])
+  createdAt  DateTime               @default(now())
+  ticketId   Int?
+  ticket     VoucherTicket?         @relation(fields: [ticketId], references: [id])
 }
 
 model Store {
@@ -133,33 +184,4 @@ model Store {
   companyId Int
   isDeleted Boolean? @default(false)
   company   Company  @relation(fields: [companyId], references: [id])
-}
-
-enum VoucherQuestionType {
-  FREE
-  SINGLE_CHOICE
-  MULTIPLE_CHOICE
-}
-
-model VoucherQuestion {
-  id                     Int                     @id @default(autoincrement())
-  question               String
-  type                   VoucherQuestionType
-  createdAt              DateTime                @default(now())
-  campaignId             Int?
-  campaign               Campaign?               @relation(fields: [campaignId], references: [id])
-  discountId             Int?
-  discount               VoucherDiscount?        @relation(fields: [discountId], references: [id])
-  isDeleted              Boolean?                @default(false)
-  voucherQuestionChoices VoucherQuestionChoice[]
-}
-
-model VoucherQuestionChoice {
-  id         Int             @id @default(autoincrement())
-  questionId Int
-  question   VoucherQuestion @relation(fields: [questionId], references: [id])
-  choice     String
-  isCorrect  Boolean?
-  isDeleted  Boolean?        @default(false)
-  createdAt  DateTime        @default(now())
 }

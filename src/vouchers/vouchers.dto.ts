@@ -67,6 +67,11 @@ export class VoucherTicketDto implements VoucherTicket {
 
   @ApiProperty()
   claimAt: Date;
+
+  @ApiProperty({
+    required: false,
+  })
+  ownedBy: number | null;
 }
 
 export class VoucherDiscountDto implements VoucherDiscount {
@@ -117,6 +122,9 @@ export class VoucherDiscountDto implements VoucherDiscount {
 
   @ApiProperty()
   total: number;
+
+  @ApiProperty()
+  claimed: number;
 
   @ApiProperty()
   createdAt: Date;
@@ -319,21 +327,21 @@ export class VoucherDiscountUpdateDto implements Partial<VoucherDiscount> {
   })
   @IsOptional()
   @MaxLength(255)
-  description: string | null;
+  description?: string | null;
 
   @ApiProperty({
     required: false,
   })
   @IsOptional()
   @IsIn(Object.values(VoucherDiscountTypeEnum))
-  type: VoucherDiscountType;
+  type?: VoucherDiscountType;
 
   @ApiProperty({
     required: false,
   })
   @IsOptional()
   @IsIn(Object.values(VoucherClaimTypeEnum))
-  claimType: VoucherClaimType | null;
+  claimType?: VoucherClaimType | null;
 
   @ApiProperty({
     required: false,
@@ -347,7 +355,7 @@ export class VoucherDiscountUpdateDto implements Partial<VoucherDiscount> {
     required: false,
   })
   @IsOptional()
-  code: string | null;
+  code?: string | null;
 
   @ApiProperty({
     enum: VoucherCodeTypeEnum,
@@ -355,7 +363,7 @@ export class VoucherDiscountUpdateDto implements Partial<VoucherDiscount> {
   })
   @IsOptional()
   @IsIn(Object.values(VoucherCodeTypeEnum))
-  codeType: VoucherCodeType;
+  codeType?: VoucherCodeType;
 
   @ApiProperty({
     required: false,
@@ -363,7 +371,7 @@ export class VoucherDiscountUpdateDto implements Partial<VoucherDiscount> {
   @TransformNumber()
   @IsOptional()
   @IsNumber()
-  discount: number;
+  discount?: number;
 
   @ApiProperty({
     required: false,
@@ -371,13 +379,21 @@ export class VoucherDiscountUpdateDto implements Partial<VoucherDiscount> {
   @TransformNumber()
   @IsOptional()
   @IsNumber()
-  total: number;
+  total?: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  @TransformNumber()
+  @IsOptional()
+  @IsNumber()
+  claimed?: number;
 
   @ApiProperty({
     required: false,
   })
   @IsOptional()
-  isDeleted: boolean;
+  isDeleted?: boolean;
 }
 
 export class VoucherTicketCreateDto implements Partial<VoucherTicket> {

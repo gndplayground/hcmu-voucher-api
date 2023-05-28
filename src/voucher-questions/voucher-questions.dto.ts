@@ -117,9 +117,9 @@ export class VoucherQuestionDto implements VoucherQuestion {
   isDeleted: boolean | null;
 
   @ApiProperty({
-    type: [VoucherQuestionChoiceCreateDto],
+    type: [VoucherQuestionChoiceDto],
   })
-  voucherQuestionChoices?: VoucherQuestionChoiceCreateDto[];
+  voucherQuestionChoices?: VoucherQuestionChoiceDto[];
 }
 
 export class VoucherQuestionCreateDto implements Partial<VoucherQuestionDto> {

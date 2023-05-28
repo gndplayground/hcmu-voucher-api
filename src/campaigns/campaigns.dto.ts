@@ -28,6 +28,7 @@ import {
 import { PaginationDto } from '@/common/dto';
 import {
   VoucherQuestionCreateDto,
+  VoucherQuestionDto,
   VoucherQuestionUpdateWithCampaignDto,
 } from '@/voucher-questions/voucher-questions.dto';
 
@@ -85,6 +86,12 @@ export class CampaignDto implements Campaign {
     type: [VoucherDiscountDto],
   })
   voucherDiscounts?: VoucherDiscountDto[];
+
+  @ApiProperty({
+    required: false,
+    type: [VoucherQuestionDto],
+  })
+  voucherQuestions?: VoucherQuestionDto[];
 }
 
 export class CampaignCreateDto {
@@ -194,7 +201,7 @@ export class CampaignUpdateDto implements Partial<Campaign> {
 
   @IsOptional()
   @IsDateString()
-  @Validate(NotPastValidator)
+  // @Validate(NotPastValidator)
   @Validate(LessThanValidator, ['endDate'])
   @Validate(RequiredIfValidator, ['endDate'])
   @ApiProperty({
@@ -204,7 +211,7 @@ export class CampaignUpdateDto implements Partial<Campaign> {
 
   @IsOptional()
   @IsDateString()
-  @Validate(NotPastValidator)
+  // @Validate(NotPastValidator)
   @Validate(RequiredIfValidator, ['startDate'])
   @ApiProperty({
     required: false,

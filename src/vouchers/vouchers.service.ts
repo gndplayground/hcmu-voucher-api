@@ -73,7 +73,7 @@ export class VouchersService {
   async updateDiscount(
     options: {
       data: VoucherDiscountUpdateDto;
-      id?: number;
+      id: number;
     },
     as?: AsyncLocalStorage<any>,
   ) {
@@ -131,6 +131,7 @@ export class VouchersService {
     options: {
       id?: number;
       claimBy?: number;
+      ownedBy?: number;
       discountId?: number;
     },
     as?: AsyncLocalStorage<any>,
@@ -142,8 +143,15 @@ export class VouchersService {
     return await p.voucherTicket.findFirst({
       where: {
         id: options.id,
-        claimBy: options.claimBy,
         discountId: options.discountId,
+        OR: [
+          {
+            claimBy: options.claimBy,
+          },
+          {
+            ownedBy: options.ownedBy,
+          },
+        ],
       },
     });
   }

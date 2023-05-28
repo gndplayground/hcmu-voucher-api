@@ -18,5 +18,6 @@ import { VoucherQuestionsModule } from '@/voucher-questions/voucher-questions.mo
   ],
   providers: [CampaignsService],
   controllers: [CampaignsController],
+  exports: [CampaignsService],
 })
 export class CampaignsModule {}

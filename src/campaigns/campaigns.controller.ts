@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   FileTypeValidator,
@@ -48,7 +47,6 @@ import { Role, Roles } from '@/auth/roles.decorator';
 import { UserDeco } from '@/auth/auth.decorator';
 import { UserPayloadDto } from '@/auth/auth.dto';
 import {
-  VoucherCodeTypeEnum,
   VoucherDiscountCreateWithCampaignDto,
   VoucherDiscountDto,
   VoucherDiscountUpdateDto,
@@ -229,75 +227,6 @@ export class CampaignsController {
     return {
       data: discount,
     };
-  }
-
-  @Roles(Role.USER)
-  @UseGuards(AuthGuard)
-  @ApiCookieAuth()
-  @ApiBearerAuth()
-  @Post('/:id/discounts/:discountId/claim')
-  @ApiOperation({ summary: 'claim voucher (only user)' })
-  @ApiExtraModels(VoucherDiscountDto)
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Success',
-  })
-  @ApiParam({ name: 'id', type: 'number', description: 'Campaign ID' })
-  @ApiParam({ name: 'discountId', type: 'number', description: 'Discount ID' })
-  async discountClaim(
-    @Param('id') campId: string,
-    @Param('discountId') discountId: string,
-    @UserDeco() userPayload: UserPayloadDto,
-  ) {
-    const find = await this.campaignsService.findOne({
-      id: Number(campId),
-    });
-
-    if (!find) {
-      throw new NotFoundException('Campaign not found');
-    }
-
-    if (find.isDeleted) {
-      throw new BadRequestException('Campaign has been deleted');
-    }
-
-    if (find.startDate > new Date()) {
-      throw new BadRequestException('Campaign has not started yet');
-    }
-
-    if (find.endDate < new Date()) {
-      throw new BadRequestException('Campaign has ended');
-    }
-
-    const discount = await this.voucherService.findOneDiscount({
-      id: Number(discountId),
-    });
-
-    if (!discount) {
-      throw new NotFoundException('Voucher not found');
-    }
-
-    const claimed = await this.voucherService.findOneTicket({
-      claimBy: userPayload.id,
-      discountId: discount.id,
-    });
-
-    if (claimed) {
-      throw new BadRequestException('Voucher already claimed');
-    }
-
-    if (discount.total === 0) {
-      throw new BadRequestException('Voucher has run out');
-    }
-
-    await this.voucherService.createTicket({
-      claimBy: userPayload.id,
-      discountId: discount.id,
-      code:
-        discount.codeType === VoucherCodeTypeEnum.CLAIM && !discount.code
-          ? Math.random().toString(36).substring(2, 7)
-          : undefined,
-    });
   }
 
   @Roles(Role.COMPANY)
