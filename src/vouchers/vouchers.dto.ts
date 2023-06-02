@@ -23,6 +23,8 @@ import {
   VoucherQuestionUpdateWithCampaignDto,
 } from '@/voucher-questions/voucher-questions.dto';
 import { RequiredIfValueValidator } from '@/common/validators';
+import { PaginationDto } from '@/common/dto';
+import { CampaignProgressEnum } from '@/campaigns/campaigns.dto';
 
 export type VoucherDiscountType = (typeof baseType)[keyof typeof baseType];
 export type VoucherClaimType =
@@ -407,4 +409,9 @@ export class VoucherTicketCreateDto implements Partial<VoucherTicket> {
 
   @ApiProperty()
   claimBy: number;
+}
+
+export class VouchersnListQueryDto extends PaginationDto {
+  @IsOptional()
+  filterByProgress?: CampaignProgressEnum;
 }

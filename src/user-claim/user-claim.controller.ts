@@ -48,6 +48,13 @@ export class UserClaimController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Success',
+    schema: {
+      properties: {
+        data: {
+          $ref: getSchemaPath(VoucherTicketDto),
+        },
+      },
+    },
   })
   async discountClaim(
     @Response({
@@ -57,11 +64,15 @@ export class UserClaimController {
     @Body() data: UserClaimVoucherRequestDto,
     @UserDeco() userPayload: UserPayloadDto,
   ) {
-    await this.userClaimService.claimVoucher({
+    const ticket = await this.userClaimService.claimVoucher({
       userId: userPayload.id,
       voucherDiscountId: data.voucherDiscountId,
       quenstionAnswers: data.quenstionAnswers,
     });
+
+    return {
+      data: ticket,
+    };
   }
 
   @Get('/')

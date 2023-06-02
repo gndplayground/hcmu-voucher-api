@@ -38,7 +38,7 @@ export class UserClaimService {
       as,
     );
 
-    await p.transaction(async (ctx, pt) => {
+    return await p.transaction(async (ctx, pt) => {
       const voucherDiscount = await pt.voucherDiscount.findUnique({
         where: {
           id: options.voucherDiscountId,

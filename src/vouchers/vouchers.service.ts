@@ -10,6 +10,7 @@ import {
 } from './vouchers.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 import { VoucherQuestionsService } from '@/voucher-questions/voucher-questions.service';
+import { CampaignProgressEnum } from '@/campaigns/campaigns.dto';
 
 @Injectable()
 export class VouchersService {
@@ -20,7 +21,11 @@ export class VouchersService {
 
   async listDiscount(
     options: {
+      search?: string;
       campaignId?: number;
+      page?: number;
+      limit?: number;
+      progress?: CampaignProgressEnum;
     } = {},
     as?: AsyncLocalStorage<any>,
   ) {
@@ -28,14 +33,61 @@ export class VouchersService {
       this.prisma,
       as,
     );
+    let dateFilter = {};
+
+    switch (options.progress) {
+      case CampaignProgressEnum.ONGOING: {
+        dateFilter = {
+          endDate: {
+            gt: new Date(),
+          },
+          startDate: {
+            lt: new Date(),
+          },
+        };
+        break;
+      }
+      case CampaignProgressEnum.FINISHED: {
+        dateFilter = {
+          endDate: {
+            lt: new Date(),
+          },
+        };
+        break;
+      }
+      case CampaignProgressEnum.UPCOMING: {
+        dateFilter = {
+          startDate: {
+            gt: new Date(),
+          },
+        };
+        break;
+      }
+    }
+
+    const { limit = 10, page = 1, search } = options;
     return p.voucherDiscount.findMany({
+      skip: Math.max(page - 1, 0) * limit,
+      take: limit,
       where: {
         campaignId: options.campaignId,
+        campaign: {
+          ...dateFilter,
+          isDeleted: false,
+          name: {
+            contains: search,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
       include: {
+        campaign: {
+          include: {
+            company: true,
+          },
+        },
         voucherQuestions: {
           orderBy: {
             createdAt: 'asc',

@@ -93,6 +93,7 @@ export class CampaignsService {
         createdAt: 'desc',
       },
       include: {
+        company: true,
         voucherDiscounts: {
           where: {
             isDeleted: {
@@ -124,6 +125,7 @@ export class CampaignsService {
         id: query.id,
       },
       include: {
+        company: true,
         voucherDiscounts: {
           where: {
             isDeleted: {
