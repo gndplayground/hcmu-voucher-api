@@ -10,18 +10,22 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCookieAuth,
   ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
+  ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
   getSchemaPath,
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
-import { LoginDto, UserPayloadDto } from './auth.dto';
+import { ChangePasswordDto, LoginDto, UserPayloadDto } from './auth.dto';
 import { RefreshGuard } from './refresh.guard';
 import { UserDeco } from './auth.decorator';
+import { AuthGuard } from './auth.guard';
 import { AppConfig } from '@/common/config';
 import { AppRequest, AppResponse } from '@/common/types/app';
 import { UserDto, UserProfileDto } from '@/user/user.dto';
@@ -192,5 +196,28 @@ export class AuthController {
     res: AppResponse,
   ) {
     res.clearCookie('token').status(HttpStatus.NO_CONTENT);
+  }
+
+  @ApiTags('auth')
+  @ApiOperation({ summary: 'Change password' })
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth()
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Success',
+  })
+  @Post('change-password')
+  async changePassword(
+    @UserDeco() user: UserPayloadDto,
+    @Body() body: ChangePasswordDto,
+  ) {
+    await this.authService.changePassword({
+      data: body,
+      userId: user.id,
+    });
+    return {
+      success: true,
+    };
   }
 }

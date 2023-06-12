@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CompanyCreateDto, CompanyDto, CompanyUpdateDto } from './company.dto';
+import {
+  CompanyCreateDto,
+  CompanyDto,
+  CompanyAdminUpdateDto,
+} from './company.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 
 @Injectable()
@@ -35,6 +39,9 @@ export class CompaniesService {
       where: {
         id: query.id,
       },
+      include: {
+        stores: true,
+      },
     });
   }
 
@@ -54,7 +61,7 @@ export class CompaniesService {
     data,
   }: {
     id: number;
-    data: CompanyUpdateDto;
+    data: CompanyAdminUpdateDto;
   }): Promise<CompanyDto> {
     return await this.prisma.company.update({
       where: {

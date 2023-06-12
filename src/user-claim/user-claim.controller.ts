@@ -4,6 +4,7 @@ import {
   Get,
   HttpStatus,
   Post,
+  Query,
   Response,
   UseGuards,
 } from '@nestjs/common';
@@ -16,9 +17,11 @@ import {
   ApiBody,
   getSchemaPath,
   ApiTags,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UserClaimService } from './user-claim.service';
 import {
+  UserCheckClaimVoucherRequestDto,
   UserClaimQuestionAnswerDto,
   UserClaimVoucherRequestDto,
 } from './user-claim.dto';
@@ -99,6 +102,46 @@ export class UserClaimController {
     const result = await this.userClaimService.getVoucherTickets({
       userId: userPayload.id,
     });
+    return {
+      data: result,
+    };
+  }
+
+  @Get('/can-claim')
+  @Roles(Role.USER)
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check if the user can claim the voucher' })
+  @ApiQuery({
+    name: 'id',
+    required: true,
+    type: Number,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Success',
+    schema: {
+      properties: {
+        data: {
+          properties: {
+            canClaim: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async checkClaim(
+    @UserDeco() userPayload: UserPayloadDto,
+    @Query() queryParams: UserCheckClaimVoucherRequestDto,
+  ) {
+    const result = await this.userClaimService.checkCanClaim({
+      userId: userPayload.id,
+      voucherDiscountId: Number(queryParams.id),
+    });
+
     return {
       data: result,
     };

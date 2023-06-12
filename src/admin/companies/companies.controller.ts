@@ -30,7 +30,7 @@ import { CompaniesService } from '@/companies/companies.service';
 import {
   CompanyCreateDto,
   CompanyDto,
-  CompanyUpdateDto,
+  CompanyAdminUpdateDto,
 } from '@/companies/company.dto';
 import { Role, Roles } from '@/auth/roles.decorator';
 import { AuthGuard } from '@/auth/auth.guard';
@@ -125,10 +125,10 @@ export class CompaniesController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
-      $ref: getSchemaPath(CompanyUpdateDto),
+      $ref: getSchemaPath(CompanyAdminUpdateDto),
     },
   })
-  @ApiExtraModels(CompanyDto, CompanyUpdateDto)
+  @ApiExtraModels(CompanyDto, CompanyAdminUpdateDto)
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Success',
@@ -143,7 +143,7 @@ export class CompaniesController {
   @UseInterceptors(FileInterceptor('logo'))
   async update(
     @Body()
-    data: CompanyUpdateDto,
+    data: CompanyAdminUpdateDto,
     @Param('id') companyId: string,
     @UploadedFile(
       new ParseFilePipe({
@@ -151,7 +151,9 @@ export class CompaniesController {
         validators: [
           // maxSize 2mb
           new MaxFileSizeValidator({ maxSize: 1000 * 1000 * 2 }),
-          new FileTypeValidator({ fileType: 'image/jpeg' }),
+          new FileTypeValidator({
+            fileType: 'image/*',
+          }),
         ],
       }),
     )

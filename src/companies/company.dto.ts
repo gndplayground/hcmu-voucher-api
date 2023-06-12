@@ -23,6 +23,11 @@ export class CompanyDto implements Company {
   @ApiProperty({
     required: false,
   })
+  website: string | null;
+
+  @ApiProperty({
+    required: false,
+  })
   logo: string | null;
 
   @ApiProperty({
@@ -69,7 +74,7 @@ export class CompanyCreateDto implements Partial<Company> {
   logo: string | null;
 }
 
-export class CompanyUpdateDto implements Partial<Company> {
+export class CompanyAdminUpdateDto implements Partial<Company> {
   @ApiProperty({
     required: false,
   })
@@ -90,6 +95,13 @@ export class CompanyUpdateDto implements Partial<Company> {
   @IsOptional()
   @MaxLength(256)
   address?: string | null;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  @MaxLength(256)
+  website?: string | null;
 
   @IsOptional()
   @ApiProperty({
@@ -114,6 +126,52 @@ export class CompanyUpdateDto implements Partial<Company> {
     required: false,
   })
   isDisabled?: boolean;
+
+  @TransformBoolean()
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({
+    required: false,
+  })
+  shouldDeletePhoto?: boolean;
+}
+
+export class CompanyUpdateDto implements Partial<Company> {
+  @ApiProperty({
+    required: false,
+  })
+  @MaxLength(128)
+  @IsOptional()
+  name?: string;
+
+  @ApiProperty({
+    required: false,
+  })
+  @MaxLength(16)
+  @IsOptional()
+  phone?: string | null;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  @MaxLength(256)
+  address?: string | null;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  @MaxLength(256)
+  website?: string | null;
+
+  @IsOptional()
+  @ApiProperty({
+    required: false,
+    type: 'string',
+    format: 'binary',
+  })
+  logo: string | null;
 
   @TransformBoolean()
   @IsOptional()

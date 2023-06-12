@@ -70,6 +70,7 @@ export class VouchersService {
       skip: Math.max(page - 1, 0) * limit,
       take: limit,
       where: {
+        isDeleted: false,
         campaignId: options.campaignId,
         campaign: {
           ...dateFilter,

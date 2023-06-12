@@ -1,9 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto, UserPayloadDto } from './auth.dto';
+
+import { ChangePasswordDto, LoginDto, UserPayloadDto } from './auth.dto';
 import { UserService } from '@/user/user.service';
 import { AppConfig } from '@/common/config';
 import { UserDto, UserProfileDto } from '@/user/user.dto';
@@ -15,6 +20,29 @@ export class AuthService {
     private readonly configService: ConfigService<AppConfig>,
     private readonly jwtService: JwtService,
   ) {}
+
+  async changePassword(data: { userId: number; data: ChangePasswordDto }) {
+    const user = await this.userService.findOne({ id: data.userId });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!(await this.comparePassword(data.data.oldPassword, user.password))) {
+      throw new BadRequestException('Old Password is incorrect');
+    }
+
+    const password = await this.hashPassword(data.data.newPassword);
+
+    await this.userService.update({
+      id: data.userId,
+      data: {
+        password,
+      },
+    });
+
+    return true;
+  }
 
   async login(info: LoginDto) {
     const user = await this.userService.findOne({ email: info.email });

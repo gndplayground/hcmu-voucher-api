@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Store } from '@prisma/client';
-import { MaxLength } from 'class-validator';
+import { MaxLength, IsOptional } from 'class-validator';
 import { TransformNumber } from '@/common/transforms';
 
 export class StoreDto implements Store {
@@ -97,45 +97,53 @@ export class StoreUpdateDto implements Partial<Store> {
     required: false,
   })
   @MaxLength(128)
+  @IsOptional()
   name?: string;
 
   @ApiProperty({
     required: false,
   })
+  @IsOptional()
   latitude?: number | null;
 
   @ApiProperty({
     required: false,
   })
+  @IsOptional()
   longitude?: number | null;
 
   @ApiProperty({
     required: false,
   })
   @MaxLength(15)
+  @IsOptional()
   phone?: string | null;
 
   @ApiProperty({
     required: false,
   })
   @MaxLength(128)
+  @IsOptional()
   address?: string | null;
 
   @ApiProperty({
     required: false,
   })
   @MaxLength(20)
+  @IsOptional()
   openAt?: string | null;
 
   @ApiProperty({
     required: false,
   })
   @MaxLength(20)
+  @IsOptional()
   closeAt?: string | null;
 
   @ApiProperty({
     required: false,
   })
+  @IsOptional()
   isDeleted?: boolean | null;
 }
 

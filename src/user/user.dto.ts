@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   MaxLength,
+  Min,
 } from 'class-validator';
 import { Role as PRole, User, UserProfile } from '@prisma/client';
 import { Exclude } from 'class-transformer';
@@ -180,4 +181,15 @@ export class UserHideSensitiveDto implements Omit<User, 'password' | 'seed'> {
     required: false,
   })
   isLocked: boolean;
+}
+
+export class UserChangePasswordDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  oldPassword: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @Min(6)
+  newPassword: string;
 }

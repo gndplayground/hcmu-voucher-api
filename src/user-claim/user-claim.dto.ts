@@ -8,9 +8,11 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { TransformNumber } from '@/common/transforms';
 
 export class UserClaimQuestionAnswerDto {
   @ApiProperty()
+  @IsNumber({}, { message: 'Value must be a number' })
   questionId: number;
 
   @ApiProperty({
@@ -18,7 +20,7 @@ export class UserClaimQuestionAnswerDto {
     type: [Number],
   })
   @IsOptional()
-  @ArrayMinSize(1, { message: 'Array must have at least one element' })
+  @ArrayMinSize(1, { message: 'Array choices must have at least one element' })
   @IsNumber({}, { each: true, message: 'Each element must be a number' })
   choices?: number[];
 
@@ -44,4 +46,12 @@ export class UserClaimVoucherRequestDto {
   @Type(() => UserClaimQuestionAnswerDto)
   @ValidateNested()
   quenstionAnswers?: UserClaimQuestionAnswerDto[];
+}
+
+export class UserCheckClaimVoucherRequestDto {
+  @ApiProperty()
+  @TransformNumber()
+  @IsNumber()
+  @Min(1, { message: 'Value must be greater than zero' })
+  id: number;
 }

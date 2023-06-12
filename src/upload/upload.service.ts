@@ -13,7 +13,12 @@ export class UploadService {
     });
   }
 
-  async upload(options: { path?: string; fileName: string; body: any }) {
+  async upload(options: {
+    path?: string;
+    fileName: string;
+    body: any;
+    type?: string;
+  }) {
     await this.s3
       .upload({
         Bucket: this.configService.get('aws').s3BucketName,
@@ -21,6 +26,7 @@ export class UploadService {
           ? `${options.path}/${options.fileName}`
           : options.fileName,
         Body: options.body,
+        ContentType: options.type,
       })
       .promise();
   }

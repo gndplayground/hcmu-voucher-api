@@ -55,12 +55,13 @@ model Company {
   phone        String?
   address      String?
   logo         String?
+  website      String?
   createdAt    DateTime      @default(now())
   isDisabled   Boolean?      @default(false)
   isDeleted    Boolean?      @default(false)
   userProfiles UserProfile[]
   campaigns    Campaign[]
-  Store        Store[]
+  stores       Store[]
 }
 
 model UserProfile {

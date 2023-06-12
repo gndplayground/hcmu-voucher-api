@@ -15,6 +15,7 @@ export class StoresService {
     return p.store.findMany({
       where: {
         companyId: options.companyId,
+        isDeleted: false,
       },
       orderBy: {
         createdAt: 'desc',

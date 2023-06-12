@@ -255,4 +255,21 @@ export class UserClaimService {
       },
     });
   }
+
+  async checkCanClaim(
+    options: {
+      userId: number;
+      voucherDiscountId: number;
+    },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const ticket = await this.voucherService.findOneTicket(
+      {
+        claimBy: options.userId,
+        discountId: options.voucherDiscountId,
+      },
+      as,
+    );
+    return ticket ? false : true;
+  }
 }
