@@ -26,6 +26,7 @@ export class VouchersService {
       page?: number;
       limit?: number;
       progress?: CampaignProgressEnum;
+      companyId?: number;
     } = {},
     as?: AsyncLocalStorage<any>,
   ) {
@@ -78,6 +79,7 @@ export class VouchersService {
           name: {
             contains: search,
           },
+          companyId: options.companyId,
         },
       },
       orderBy: {

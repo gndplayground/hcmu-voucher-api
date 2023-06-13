@@ -30,6 +30,7 @@ import { Role, Roles } from '@/auth/roles.decorator';
 import { UserPayloadDto } from '@/auth/auth.dto';
 import { UserDeco } from '@/auth/auth.decorator';
 import { AuthGuard } from '@/auth/auth.guard';
+import { PaginationDto } from '@/common/dto';
 
 @Controller('user-claim')
 @ApiTags('user-claim')
@@ -98,12 +99,32 @@ export class UserClaimController {
       },
     },
   })
-  async listDiscount(@UserDeco() userPayload: UserPayloadDto) {
-    const result = await this.userClaimService.getVoucherTickets({
-      userId: userPayload.id,
-    });
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+  })
+  async listDiscount(
+    @UserDeco() userPayload: UserPayloadDto,
+    @Query() queryParams: PaginationDto,
+  ) {
+    const { page } = queryParams;
+
+    const [currentPage, nextPage] = await Promise.all([
+      this.userClaimService.getVoucherTickets({
+        userId: userPayload.id,
+        page: page || 1,
+      }),
+      this.userClaimService.getVoucherTickets({
+        userId: userPayload.id,
+        page: page ? page + 1 : 2,
+      }),
+    ]);
     return {
-      data: result,
+      data: currentPage,
+      meta: {
+        hasNextPage: nextPage.length > 0,
+      },
     };
   }
 

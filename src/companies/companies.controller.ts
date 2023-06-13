@@ -30,8 +30,11 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CompaniesService } from './companies.service';
-import { CompanyDto, CompanyUpdateDto } from './company.dto';
-import { PaginationDto } from '@/common/dto';
+import {
+  CompanyDto,
+  CompanyListOptionsDto,
+  CompanyUpdateDto,
+} from './company.dto';
 import { Role, Roles } from '@/auth/roles.decorator';
 import { UploadService } from '@/upload/upload.service';
 import { AuthGuard } from '@/auth/auth.guard';
@@ -63,6 +66,11 @@ export class CompaniesController {
     required: false,
     type: String,
   })
+  @ApiQuery({
+    name: 'isHaveActiveCampaigns',
+    required: false,
+    type: Boolean,
+  })
   @ApiExtraModels(CompanyDto)
   @ApiResponse({
     status: HttpStatus.OK,
@@ -86,19 +94,21 @@ export class CompaniesController {
       },
     },
   })
-  async list(@Query() queryParams: PaginationDto) {
-    const { limit, page, search } = queryParams;
+  async list(@Query() queryParams: CompanyListOptionsDto) {
+    const { limit, page, search, isHaveActiveCampaigns } = queryParams;
 
     const [currentPage, nextPage] = await Promise.all([
       await this.companiesService.list({
         limit: limit || 10,
         page: page || 1,
         search,
+        isHaveActiveCampaigns,
       }),
       await this.companiesService.list({
         limit: limit || 10,
         page: page + 1 || 2,
         search,
+        isHaveActiveCampaigns,
       }),
     ]);
 

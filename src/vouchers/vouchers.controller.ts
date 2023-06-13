@@ -67,20 +67,27 @@ export class VouchersController {
     required: false,
     enum: Object.values(CampaignProgressEnum),
   })
+  @ApiQuery({
+    name: 'companyId',
+    required: false,
+    type: Number,
+  })
   async list(@Query() queryParams: VouchersnListQueryDto) {
-    const { limit, page, search, filterByProgress } = queryParams;
+    const { limit, page, search, filterByProgress, companyId } = queryParams;
     const [currentPage, nextPage] = await Promise.all([
       await this.vouchersService.listDiscount({
         limit: limit || 10,
         page: page || 1,
         search,
         progress: filterByProgress,
+        companyId,
       }),
       await this.vouchersService.listDiscount({
         limit: limit || 10,
         page: page + 1 || 2,
         search,
         progress: filterByProgress,
+        companyId,
       }),
     ]);
     return {

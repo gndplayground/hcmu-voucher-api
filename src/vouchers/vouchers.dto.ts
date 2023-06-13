@@ -414,4 +414,9 @@ export class VoucherTicketCreateDto implements Partial<VoucherTicket> {
 export class VouchersnListQueryDto extends PaginationDto {
   @IsOptional()
   filterByProgress?: CampaignProgressEnum;
+
+  @TransformNumber()
+  @IsOptional()
+  @IsNumber()
+  companyId?: number;
 }

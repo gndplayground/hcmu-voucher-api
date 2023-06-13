@@ -224,6 +224,7 @@ export class UserClaimService {
   async getVoucherTickets(
     options: {
       userId: number;
+      page?: number;
     },
     as?: AsyncLocalStorage<any>,
   ) {
@@ -232,7 +233,11 @@ export class UserClaimService {
       as,
     );
 
+    const { page = 1 } = options;
+    const limit = 10;
     return await p.voucherTicket.findMany({
+      skip: Math.max(page - 1, 0) * limit,
+      take: limit,
       where: {
         OR: [
           {
@@ -249,7 +254,11 @@ export class UserClaimService {
       include: {
         voucherDiscount: {
           include: {
-            campaign: true,
+            campaign: {
+              include: {
+                company: true,
+              },
+            },
           },
         },
       },

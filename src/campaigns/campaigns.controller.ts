@@ -122,14 +122,14 @@ export class CampaignsController {
   async list(@Query() queryParams: CampaignListQueryDto) {
     const { limit, page, search, filterByProgress, companyId } = queryParams;
     const [currentPage, nextPage] = await Promise.all([
-      await this.campaignsService.list({
+      this.campaignsService.list({
         limit: limit || 10,
         page: page || 1,
         search,
         progress: filterByProgress,
         companyId,
       }),
-      await this.campaignsService.list({
+      this.campaignsService.list({
         limit: limit || 10,
         page: page + 1 || 2,
         search,

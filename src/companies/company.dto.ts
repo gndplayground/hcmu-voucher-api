@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Company } from '@prisma/client';
 import { IsNotEmpty, MaxLength, IsBoolean, IsOptional } from 'class-validator';
 import { TransformBoolean } from '@/common/transforms';
+import { PaginationDto } from '@/common/dto';
 
 export class CompanyDto implements Company {
   @ApiProperty()
@@ -180,4 +181,10 @@ export class CompanyUpdateDto implements Partial<Company> {
     required: false,
   })
   shouldDeletePhoto?: boolean;
+}
+
+export class CompanyListOptionsDto extends PaginationDto {
+  @TransformBoolean()
+  @IsOptional()
+  isHaveActiveCampaigns?: boolean;
 }

@@ -16,17 +16,27 @@ export class CompaniesService {
     search?: string;
     isDisabled?: boolean;
     isDeleted?: boolean;
+    isHaveActiveCampaigns?: boolean;
   }): Promise<CompanyDto[]> {
-    const { limit, page } = options;
+    const { limit, page, isHaveActiveCampaigns } = options;
     return this.prisma.company.findMany({
       skip: Math.max(page - 1, 0) * limit,
       take: limit,
       where: {
         name: {
-          contains: options.search,
+          contains: options.search ? `${options.search}` : undefined,
         },
         isDeleted: options.isDeleted || false,
         isDisabled: options.isDisabled || false,
+        campaigns: isHaveActiveCampaigns
+          ? {
+              some: {
+                endDate: {
+                  gte: new Date(),
+                },
+              },
+            }
+          : undefined,
       },
       orderBy: {
         createdAt: 'desc',
