@@ -77,7 +77,8 @@ export class VouchersService {
           ...dateFilter,
           isDeleted: false,
           name: {
-            contains: search,
+            contains: search ? `${search}` : undefined,
+            mode: 'insensitive',
           },
           companyId: options.companyId,
         },

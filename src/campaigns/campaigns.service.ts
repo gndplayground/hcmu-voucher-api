@@ -83,7 +83,8 @@ export class CampaignsService {
       take: limit,
       where: {
         name: {
-          contains: options.search,
+          contains: options.search ? `${options.search}` : undefined,
+          mode: 'insensitive',
         },
         ...dateFilter,
         isDeleted: options.isDeleted || false,

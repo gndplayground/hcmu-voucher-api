@@ -25,6 +25,7 @@ export class CompaniesService {
       where: {
         name: {
           contains: options.search ? `${options.search}` : undefined,
+          mode: 'insensitive',
         },
         isDeleted: options.isDeleted || false,
         isDisabled: options.isDisabled || false,

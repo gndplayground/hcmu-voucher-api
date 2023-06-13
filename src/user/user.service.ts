@@ -42,7 +42,8 @@ export class UserService {
       select: HIDE_SENSITIVE_FIELDS,
       where: {
         email: {
-          contains: options.search,
+          contains: options.search ? `${options.search}` : undefined,
+          mode: 'insensitive',
         },
       },
       orderBy: {
