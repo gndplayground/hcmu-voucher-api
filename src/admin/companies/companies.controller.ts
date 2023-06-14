@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   FileTypeValidator,
+  Get,
   HttpStatus,
   MaxFileSizeValidator,
   NotFoundException,
@@ -9,6 +10,7 @@ import {
   ParseFilePipe,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -23,6 +25,7 @@ import {
   ApiTags,
   getSchemaPath,
   ApiConsumes,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { v4 as uuid } from 'uuid';
@@ -31,6 +34,7 @@ import {
   CompanyCreateDto,
   CompanyDto,
   CompanyAdminUpdateDto,
+  CompanyListOptionsDto,
 } from '@/companies/company.dto';
 import { Role, Roles } from '@/auth/roles.decorator';
 import { AuthGuard } from '@/auth/auth.guard';
@@ -205,5 +209,88 @@ export class CompaniesController {
       }
       throw e;
     }
+  }
+
+  @Get()
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List companies' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'isHaveActiveCampaigns',
+    required: false,
+    type: Boolean,
+  })
+  @ApiQuery({
+    name: 'isDeleted',
+    required: false,
+    type: Boolean,
+  })
+  @ApiExtraModels(CompanyDto)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Success',
+    schema: {
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            $ref: getSchemaPath(CompanyDto),
+          },
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            hasNextPage: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
+  })
+  async list(@Query() queryParams: CompanyListOptionsDto) {
+    const { limit, page, search, isHaveActiveCampaigns, isDeleted } =
+      queryParams;
+
+    const [currentPage, nextPage] = await Promise.all([
+      await this.companiesService.list({
+        limit: limit || 10,
+        page: page || 1,
+        search,
+        isHaveActiveCampaigns,
+        isDeleted,
+      }),
+      await this.companiesService.list({
+        limit: limit || 10,
+        page: page + 1 || 2,
+        search,
+        isHaveActiveCampaigns,
+        isDeleted,
+      }),
+    ]);
+
+    return {
+      data: currentPage,
+      meta: {
+        hasNextPage: nextPage.length > 0,
+      },
+    };
   }
 }

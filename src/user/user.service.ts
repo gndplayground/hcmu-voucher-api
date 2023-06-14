@@ -34,12 +34,21 @@ export class UserService {
     page: number;
     limit: number;
     search?: string;
+    inclueCompany?: boolean;
   }): Promise<UserHideSensitiveDto[]> {
     const { limit, page } = options;
     return this.prisma.user.findMany({
       skip: Math.max(page - 1, 0) * limit,
       take: limit,
-      select: HIDE_SENSITIVE_FIELDS,
+      select: {
+        ...HIDE_SENSITIVE_FIELDS,
+        profile: {
+          select: {
+            companyId: true,
+            company: options.inclueCompany,
+          },
+        },
+      },
       where: {
         email: {
           contains: options.search ? `${options.search}` : undefined,

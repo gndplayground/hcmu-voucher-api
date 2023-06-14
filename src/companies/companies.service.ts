@@ -63,6 +63,7 @@ export class CompaniesService {
         phone: company.phone,
         address: company.address,
         logo: company.logo,
+        website: company.website,
       },
     });
   }

@@ -73,6 +73,12 @@ export class CompanyCreateDto implements Partial<Company> {
     format: 'binary',
   })
   logo: string | null;
+
+  @ApiProperty({
+    required: false,
+  })
+  @MaxLength(256)
+  website: string | null;
 }
 
 export class CompanyAdminUpdateDto implements Partial<Company> {
@@ -187,4 +193,8 @@ export class CompanyListOptionsDto extends PaginationDto {
   @TransformBoolean()
   @IsOptional()
   isHaveActiveCampaigns?: boolean;
+
+  @TransformBoolean()
+  @IsOptional()
+  isDeleted?: boolean;
 }

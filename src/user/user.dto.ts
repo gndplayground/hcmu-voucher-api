@@ -6,6 +6,7 @@ import {
   IsOptional,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { Role as PRole, User, UserProfile } from '@prisma/client';
 import { Exclude } from 'class-transformer';
@@ -131,26 +132,32 @@ export class UserEditDto {
   @ApiProperty({
     required: false,
   })
+  @IsOptional()
   password?: string;
 
   @ApiProperty({
     required: false,
   })
+  @IsOptional()
   role?: Role;
 
   @ApiProperty({
     required: false,
   })
+  @IsOptional()
   isDisabled?: boolean;
 
   @ApiProperty({
     required: false,
   })
+  @IsOptional()
   isBlocked?: boolean;
 
   @ApiProperty({
     required: false,
   })
+  @IsOptional()
+  @ValidateNested()
   profile?: UserProfileUpdateDto;
 }
 

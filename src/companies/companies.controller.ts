@@ -103,12 +103,14 @@ export class CompaniesController {
         page: page || 1,
         search,
         isHaveActiveCampaigns,
+        isDeleted: false,
       }),
       await this.companiesService.list({
         limit: limit || 10,
         page: page + 1 || 2,
         search,
         isHaveActiveCampaigns,
+        isDeleted: false,
       }),
     ]);
 

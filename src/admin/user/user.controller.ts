@@ -81,11 +81,13 @@ export class UserController {
         limit: limit || 10,
         page: page || 1,
         search,
+        inclueCompany: true,
       }),
       await this.userService.list({
         limit: limit || 10,
         page: page + 1 || 2,
         search,
+        inclueCompany: true,
       }),
     ]);
 
