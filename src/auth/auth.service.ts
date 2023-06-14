@@ -8,7 +8,13 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import { ChangePasswordDto, LoginDto, UserPayloadDto } from './auth.dto';
+import {
+  ChangePasswordDto,
+  LoginDto,
+  RegisterDto,
+  UserPayloadDto,
+} from './auth.dto';
+import { Role } from './roles.decorator';
 import { UserService } from '@/user/user.service';
 import { AppConfig } from '@/common/config';
 import { UserDto, UserProfileDto } from '@/user/user.dto';
@@ -42,6 +48,22 @@ export class AuthService {
     });
 
     return true;
+  }
+
+  async register(data: RegisterDto) {
+    const user = await this.userService.findOne({ email: data.email });
+
+    if (user) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    const password = await this.hashPassword(data.password);
+
+    await this.userService.create({
+      email: data.email,
+      password,
+      role: Role.USER,
+    });
   }
 
   async login(info: LoginDto) {

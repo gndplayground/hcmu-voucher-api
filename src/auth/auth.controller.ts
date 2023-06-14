@@ -22,7 +22,12 @@ import {
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
-import { ChangePasswordDto, LoginDto, UserPayloadDto } from './auth.dto';
+import {
+  ChangePasswordDto,
+  LoginDto,
+  RegisterDto,
+  UserPayloadDto,
+} from './auth.dto';
 import { RefreshGuard } from './refresh.guard';
 import { UserDeco } from './auth.decorator';
 import { AuthGuard } from './auth.guard';
@@ -215,6 +220,23 @@ export class AuthController {
     await this.authService.changePassword({
       data: body,
       userId: user.id,
+    });
+    return {
+      success: true,
+    };
+  }
+
+  @ApiTags('auth')
+  @ApiOperation({ summary: 'Register user' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Success',
+  })
+  @Post('register')
+  async register(@Body() body: RegisterDto) {
+    await this.authService.register({
+      email: body.email,
+      password: body.password,
     });
     return {
       success: true,
