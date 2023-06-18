@@ -38,6 +38,7 @@ import {
   CampaignDto,
   CampaignListQueryDto,
   CampaignProgressEnum,
+  CampaignStatsQueryDto,
   CampaignUpdateDto,
   CampaignUpdateFullDto,
 } from './campaigns.dto';
@@ -559,6 +560,105 @@ export class CampaignsController {
 
     return {
       data: campaign,
+    };
+  }
+
+  @Roles(Role.COMPANY)
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth()
+  @ApiBearerAuth()
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'get campaign detail' })
+  @ApiExtraModels(CampaignDto)
+  @ApiQuery({
+    name: 'start',
+    required: true,
+    type: String,
+  })
+  async getDetailStat(
+    @Param('id') id: string,
+    @Query() queryParams: CampaignStatsQueryDto,
+  ) {
+    const campaign = await this.campaignsService.findOne({
+      id: Number(id),
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    const stats = await this.campaignsService.stats({
+      id: Number(id),
+      start: new Date(queryParams.start),
+    });
+
+    return {
+      data: stats,
+    };
+  }
+
+  @Roles(Role.COMPANY)
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth()
+  @ApiBearerAuth()
+  @Get(':id/discount/:discountId/stats')
+  @ApiOperation({ summary: 'get campaign detail' })
+  @ApiExtraModels(CampaignDto)
+  @ApiQuery({
+    name: 'start',
+    required: true,
+    type: String,
+  })
+  async getDetailDiscountStat(
+    @Param('id') id: string,
+    @Param('discountId') discountId: string,
+    @Query() queryParams: CampaignStatsQueryDto,
+  ) {
+    const campaign = await this.campaignsService.findOne({
+      id: Number(id),
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    const stats = await this.campaignsService.discountStats({
+      campaignId: Number(id),
+      id: Number(discountId),
+      start: new Date(queryParams.start),
+    });
+
+    return {
+      data: stats,
+    };
+  }
+
+  @Roles(Role.COMPANY)
+  @UseGuards(AuthGuard)
+  @ApiCookieAuth()
+  @ApiBearerAuth()
+  @Get(':id/discount/:discountId/stats-questions')
+  @ApiOperation({ summary: 'get campaign detail question stats' })
+  @ApiExtraModels(CampaignDto)
+  async getDetailDiscountStatsQuestion(
+    @Param('id') id: string,
+    @Param('discountId') discountId: string,
+  ) {
+    const campaign = await this.campaignsService.findOne({
+      id: Number(id),
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    const stats = await this.campaignsService.discountQuestionStats({
+      campaignId: Number(id),
+      id: Number(discountId),
+    });
+
+    return {
+      data: stats,
     };
   }
 }

@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { endOfWeek, format, startOfWeek } from 'date-fns';
 import {
   CampaignCreateDto,
   CampaignDto,
@@ -9,12 +10,14 @@ import {
 } from './campaigns.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 import {
+  VoucherClaimTypeEnum,
   VoucherDiscountCreateWithCampaignDto,
   VoucherDiscountUpdateWithCampaignDto,
 } from '@/vouchers/vouchers.dto';
 import { VouchersService } from '@/vouchers/vouchers.service';
 import {
   VoucherQuestionCreateDto,
+  VoucherQuestionTypeEnum,
   VoucherQuestionUpdateWithCampaignDto,
 } from '@/voucher-questions/voucher-questions.dto';
 import { VoucherQuestionsService } from '@/voucher-questions/voucher-questions.service';
@@ -338,5 +341,286 @@ export class CampaignsService {
         ...data,
       },
     });
+  }
+
+  async stats(
+    { id, start }: { id: number; start: Date },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+
+    const firstDayOfWeek = startOfWeek(start, { weekStartsOn: 1 });
+
+    const endDayOfWeek = endOfWeek(start, { weekStartsOn: 1 });
+
+    const claimedByWeek = {
+      monday: 0,
+      tuesday: 0,
+      wednesday: 0,
+      thursday: 0,
+      friday: 0,
+      saturday: 0,
+      sunday: 0,
+    };
+
+    const tickets = await p.voucherTicket.findMany({
+      where: {
+        voucherDiscount: {
+          campaignId: id,
+        },
+        claimAt: {
+          gte: firstDayOfWeek,
+          lte: endDayOfWeek,
+        },
+      },
+    });
+
+    tickets.forEach((t) => {
+      const day = format(t.claimAt, 'EEEE').toLowerCase();
+      claimedByWeek[day] += 1;
+    });
+
+    const voucherDiscounts = await p.voucherDiscount.findMany({
+      where: {
+        campaignId: id,
+      },
+    });
+
+    let claimed = 0;
+    let unclaimed = 0;
+
+    voucherDiscounts.forEach((vd) => {
+      claimed += vd.claimed;
+      unclaimed += vd.total - vd.claimed;
+    });
+
+    return {
+      claimedByWeek,
+      claimed,
+      unclaimed,
+    };
+  }
+
+  async discountStats(
+    { id, campaignId, start }: { id: number; start: Date; campaignId: number },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+
+    const campaign = await p.campaign.findUnique({
+      where: {
+        id: campaignId,
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    const discount = await p.voucherDiscount.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!discount) {
+      throw new NotFoundException('Discount not found');
+    }
+
+    const firstDayOfWeek = startOfWeek(start, { weekStartsOn: 1 });
+
+    const endDayOfWeek = endOfWeek(start, { weekStartsOn: 1 });
+
+    const claimedByWeek = {
+      monday: 0,
+      tuesday: 0,
+      wednesday: 0,
+      thursday: 0,
+      friday: 0,
+      saturday: 0,
+      sunday: 0,
+    };
+
+    const tickets = await p.voucherTicket.findMany({
+      where: {
+        voucherDiscount: {
+          id,
+        },
+        claimAt: {
+          gte: firstDayOfWeek,
+          lte: endDayOfWeek,
+        },
+      },
+      include: {
+        // userClaimQuestionAnswers: true,
+        voucherDiscount: true,
+      },
+    });
+
+    const claimQuestionTickets: number[] = [];
+
+    tickets.forEach((t) => {
+      const day = format(t.claimAt, 'EEEE').toLowerCase();
+      claimedByWeek[day] += 1;
+      if (
+        campaign.claimType === VoucherClaimTypeEnum.QUESTIONS ||
+        t.voucherDiscount?.claimType === VoucherClaimTypeEnum.QUESTIONS
+      ) {
+        claimQuestionTickets.push(t.id);
+      }
+    });
+
+    const claimQuestionAnswers = await p.userClaimQuestionAnswer.findMany({
+      where: {
+        ticketId: {
+          in: claimQuestionTickets,
+        },
+      },
+    });
+
+    const questions = await p.voucherQuestion.findMany({
+      where: {
+        campaignId:
+          campaign.claimType === VoucherClaimTypeEnum.QUESTIONS
+            ? campaign.id
+            : undefined,
+        discountId:
+          campaign.claimType !== VoucherClaimTypeEnum.QUESTIONS
+            ? discount.id
+            : undefined,
+      },
+      include: {
+        voucherQuestionChoices: true,
+      },
+    });
+
+    questions.forEach((q) => {
+      if (
+        q.type === VoucherQuestionTypeEnum.MULTIPLE_CHOICE ||
+        q.type === VoucherQuestionTypeEnum.SINGLE_CHOICE
+      ) {
+        const answers = claimQuestionAnswers.filter(
+          (a) => a.questionId === q.id,
+        );
+        const choices = q.voucherQuestionChoices;
+        choices.forEach((c) => {
+          (c as any).count = answers.filter((a) => a.choiceId === c.id).length;
+        });
+        q.voucherQuestionChoices = choices;
+      }
+    });
+
+    const claimed = discount.claimed;
+
+    const unclaimed = discount.total - discount.claimed;
+
+    return {
+      claimedByWeek,
+      claimed,
+      unclaimed,
+      questions,
+    };
+  }
+
+  async discountQuestionStats(
+    { id, campaignId }: { id: number; campaignId: number },
+    as?: AsyncLocalStorage<any>,
+  ) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+
+    const campaign = await p.campaign.findUnique({
+      where: {
+        id: campaignId,
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    const discount = await p.voucherDiscount.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!discount) {
+      throw new NotFoundException('Discount not found');
+    }
+
+    const claimQuestionTickets: number[] = [];
+
+    const tickets = await p.voucherTicket.findMany({
+      where: {
+        voucherDiscount: {
+          id,
+        },
+      },
+      include: {
+        voucherDiscount: true,
+      },
+    });
+
+    tickets.forEach((t) => {
+      if (
+        campaign.claimType === VoucherClaimTypeEnum.QUESTIONS ||
+        t.voucherDiscount?.claimType === VoucherClaimTypeEnum.QUESTIONS
+      ) {
+        claimQuestionTickets.push(t.id);
+      }
+    });
+
+    const claimQuestionAnswers = await p.userClaimQuestionAnswer.findMany({
+      where: {
+        ticketId: {
+          in: claimQuestionTickets,
+        },
+      },
+    });
+
+    const questions = await p.voucherQuestion.findMany({
+      where: {
+        campaignId:
+          campaign.claimType === VoucherClaimTypeEnum.QUESTIONS
+            ? campaign.id
+            : undefined,
+        discountId:
+          campaign.claimType !== VoucherClaimTypeEnum.QUESTIONS
+            ? discount.id
+            : undefined,
+      },
+      include: {
+        voucherQuestionChoices: true,
+      },
+    });
+
+    questions.forEach((q) => {
+      if (
+        q.type === VoucherQuestionTypeEnum.MULTIPLE_CHOICE ||
+        q.type === VoucherQuestionTypeEnum.SINGLE_CHOICE
+      ) {
+        const answers = claimQuestionAnswers.filter(
+          (a) => a.questionId === q.id,
+        );
+        const choices = q.voucherQuestionChoices;
+        choices.forEach((c) => {
+          (c as any).count = answers.filter((a) => a.choiceId === c.id).length;
+        });
+        q.voucherQuestionChoices = choices;
+      }
+    });
+
+    return {
+      questions,
+    };
   }
 }

@@ -271,3 +271,8 @@ export class CampaignListQueryDto extends PaginationDto {
   @IsOptional()
   companyId?: number;
 }
+
+export class CampaignStatsQueryDto {
+  @IsDateString()
+  start: string;
+}
