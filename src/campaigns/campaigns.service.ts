@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { endOfWeek, format, startOfWeek } from 'date-fns';
 import {
   CampaignCreateDto,
@@ -621,6 +621,78 @@ export class CampaignsService {
 
     return {
       questions,
+    };
+  }
+
+  async campaignStats(as?: AsyncLocalStorage<any>) {
+    const p = PrismaService.getPrismaInstanceFromAsyncLocalStorage(
+      this.prisma,
+      as,
+    );
+
+    const activePromise = p.campaign.findMany({
+      where: {
+        startDate: {
+          lte: new Date(),
+        },
+        endDate: {
+          gte: new Date(),
+        },
+        isDeleted: false,
+      },
+    });
+
+    const upcomingPromise = p.campaign.findMany({
+      where: {
+        startDate: {
+          gt: new Date(),
+        },
+        endDate: {
+          gt: new Date(),
+        },
+        isDeleted: false,
+      },
+    });
+
+    const [campaignsActive, campaignsUpcoming] = await Promise.all([
+      activePromise,
+      upcomingPromise,
+    ]);
+
+    const [users, usersCompany] = await Promise.all([
+      p.user.count({
+        where: {
+          role: Role.USER,
+          isDisabled: false,
+        },
+      }),
+      p.user.count({
+        where: {
+          role: Role.COMPANY,
+          isDisabled: false,
+        },
+      }),
+    ]);
+
+    const company = await p.company.count({
+      where: {
+        isDeleted: false,
+      },
+    });
+
+    const tickets = await p.voucherTicket.count({});
+
+    return {
+      campaigns: {
+        active: campaignsActive.length,
+        upcoming: campaignsUpcoming.length,
+      },
+      users: {
+        user: users,
+        company: usersCompany,
+      },
+      company,
+      tickets,
     };
   }
 }
